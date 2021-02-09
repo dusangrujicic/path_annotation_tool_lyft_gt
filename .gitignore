@@ -1,0 +1,7 @@
+test.py
+.vscode/*
+.idea/
+**/__pycache__/*
+poetry.lock
+pyproject.toml
+annotation_tool/rendered_template.html

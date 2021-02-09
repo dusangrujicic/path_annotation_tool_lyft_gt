@@ -1,0 +1,13 @@
+1) useful function in https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/map_expansion/utils.py
+    - get_egoposes_on_drivable_ratio
+
+
+
+Data extraction:
+1) For every scene - get all sample tokens
+2) For every sample token - extract the sample data:
+    Most importatnly egopositions from the future samples up to the end of the scene
+3) Then the extracted data for every frame includes the standard data plus the egopositions
+from subsequent frames normalized for the current frame (so in local 2D top down coordinates 
+of the current frame)
+4) Display that in the tool
