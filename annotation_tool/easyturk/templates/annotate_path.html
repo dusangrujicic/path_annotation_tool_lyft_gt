@@ -1006,45 +1006,12 @@
       return closestIx;
     }
 
-    function deleteClosestPoint(from, minDist) {
-      var closestPoint;
-      var ix = 0;
-      var closestIx = -1;
-      this.eachItem(point => {
-        const dist = Math.hypot(from.x - point.x, from.y - point.y);
-        if (dist < minDist) {
-          closestPoint = point;
-          minDist = dist;
-          closestIx = ix;
-        }
-        ix++;
-      });
-      if (closestIx > -1 && closestIx != 0) {
-        this.items.splice(closestIx, 1);
-      }
-      lines.items = []
-      // Draw all points again!
-      for (j = 0; j < points.items.length - 1; j++) {
-        lines.add(Line(j, (j + 1)));
-      }
-      if (lines.items.length > 0) {
-        setStyle(lineStyle);
-        topDownCtx.beginPath();
-        // lines.draw();
-        points.drawPathOnTopDownView();
-        topDownCtx.stroke();
-      }
-      setStyle(pointStyle);
-      topDownCtx.beginPath();
-      path_points.draw();
-      topDownCtx.stroke();
-    }
 
     function distanceLineFromPoint(line, point) {
-      const lx = points.items[line.p1].x;
-      const ly = points.items[line.p1].y;
-      const v1x = points.items[line.p2].x - lx;
-      const v1y = points.items[line.p2].y - ly;
+      const lx = path_points.items[line.p1].x;
+      const ly = path_points.items[line.p1].y;
+      const v1x = path_points.items[line.p2].x - lx;
+      const v1y = path_points.items[line.p2].y - ly;
       const v2x = point.x - lx;
       const v2y = point.y - ly;
       // get unit dist of closest point
@@ -1055,7 +1022,7 @@
         return Math.hypot(lx - point.x, ly - point.y);
       }
       // point is after end of line
-      return Math.hypot(points.items[line.p2].x - point.x, points.items[line.p2].y - point.y);
+      return Math.hypot(path_points.items[line.p2].x - point.x, path_points.items[line.p2].y - point.y);
     }
 
     // this will extend the lines list
@@ -1075,8 +1042,8 @@
       topDownCtx.rect(point.x - 2, point.y - 2, 4, 4);
     }
     function drawLine(line) {
-      topDownCtx.moveTo(points.items[line.p1].x, points.items[line.p1].y);
-      topDownCtx.lineTo(points.items[line.p2].x, points.items[line.p2].y);
+      topDownCtx.moveTo(path_points.items[line.p1].x, path_points.items[line.p1].y);
+      topDownCtx.lineTo(path_points.items[line.p2].x, path_points.items[line.p2].y);
     }
     function drawLines() { this.eachItem(line => drawLine(line)) }
     function drawPoints() { this.eachItem(point => drawPoint(point)) }
@@ -1139,20 +1106,7 @@
     $(document).keypress(function (event) {
       // if (play) { return };
       var keycode = (event.keyCode ? event.keyCode : event.which);
-      if (keycode == '100') {
-        if (closestPoint) {
-          // Remove this point!!
-          points.deleteClosest(mouse, minDist);
-          if (points.items.length < 2) {
-            context = canvasFrontal.getContext('2d');
-            context.clearRect(0, 0, canvasFrontal.width, canvasFrontal.height);
-            context = canvasTopDown.getContext('2d');
-            context.clearRect(0, 0, canvasTopDown.width, canvasTopDown.height);
-          }
-          drawPathOnFrontalView();
-          drawPathOnTopDownView();
-        }
-      } else if (keycode = '115') {
+      if (keycode = '115') {
         if (closestObjectIx > -1) {
           if (closestObjectIx == referredObjectIx) {
             referredObjectIx = -1;
@@ -1279,15 +1233,9 @@
         else {
           closestPoint = Point2(mouse.x, mouse.y);
           //car_end_point_pos = closestPoint;
-          points.add(closestPoint);
           dragOffsetX = 0;
           dragOffsetY = 0;
           pointDrag = true;
-
-          if (path.length() > 1) {
-            // Draw line
-            lines.add(Line(path_points.items.length - 2, path_points.items.length - 1));
-          }
           //console.log(car_end_point_pos)
           // if (!play && $("#video-slider").val() == input[idx]["command_data"]['num_frames']) {
           // if (!play) {
