@@ -151,88 +151,21 @@
       </div>
     </div>
 
-    <div class='col-xs-2'>
-      <div class='legend-title'><b>Actions:</b></div>
-      <div>
-        <input id="actionLeft" type="checkbox" name="actionLeft" />
-        <label for="actionLeft" style="font-size:10;">Turn Left</label>
-      </div>
-      <div>
-        <input id="actionRight" type="checkbox" name="actionRight" />
-        <label for="actionRight" style="font-size:10;">Turn Right</label>
-      </div>
-      <div>
-        <input id="actionChangeLaneLeft" type="checkbox" name="actionChangeLaneLeft" />
-        <label for="actionChangeLaneLeft" style="font-size:10;">Change Lane Left</label>
-      </div>
-      <div>
-        <input id="actionChangeLaneRight" type="checkbox" name="actionChangeLaneRight" />
-        <label for="actionChangeLaneRight" style="font-size:10;">Change Lane Right</label>
-      </div>
-      <div>
-        <input id="actionULeft" type="checkbox" name="actionULeft" />
-        <label for="actionULeft" style="font-size:10;">U-Turn Left</label>
-      </div>
-      <div>
-        <input id="actionURight" type="checkbox" name="actionURight" />
-        <label for="actionURight" style="font-size:10;">U-Turn Right</label>
-      </div>
-      <div>
-        <input id="actionPark" type="checkbox" name="actionPark" />
-        <label for="actionPark" style="font-size:10;">Park</label>
-      </div>
-      <div>
-        <input id="actionStop" type="checkbox" name="actionStop" />
-        <label for="actionStop" style="font-size:10;">Stop</label>
-      </div>
-      <div>
-        <input id="actionFollow" type="checkbox" name="actionFollow" />
-        <label for="actionFollow" style="font-size:10;">Follow</label>
-      </div>
-      <div>
-        <input id="actionOther" type="checkbox" name="actionOther" />
-        <label for="actionOther" style="font-size:10;">Other</label>
-        <input type="text" id="actionOtherText" name="actionOtherText" placeholder="Which other..." />
+    <div class='my-legend'>
+      <div class='legend-title'>Tasks:</div>
+      <div class='legend-scale'>
+        <ul class='legend-labels'>
+          <li>
+            <input type="text" id="task_object" value="Selected object" style="font-weight:bold;" readonly>
+          </li>
+          <li>
+            <input type="text" id="task_command" value="Written command" style="font-weight:bold;" readonly>
+          </li>
+        </ul>
       </div>
     </div>
 
-    <div class='col-xs-2'>
-
-
-      <div class='legend-title'><b>This path is:</b></div>
-      <div>
-        <input id="legalityLegal" type="radio" name="legality" value="legal" />
-        <label for="legalityLegal" style="font-size:10;">Legal/Possible</label>
-      </div>
-      <div>
-        <input id="legalityIllegal" type="radio" name="legality" value="illegal" />
-        <label for="legalityIllegal" style="font-size:10;">Illegal/Impossible</label>
-      </div>
-
-      <div class='my-legend'>
-        <div class='legend-title'>Tasks:</div>
-        <div class='legend-scale'>
-          <ul class='legend-labels'>
-            <li>
-              <input type="text" id="task_object" value="Selected object" style="font-weight:bold;" readonly>
-            </li>
-            <li>
-              <input type="text" id="task_command" value="Written command" style="font-weight:bold;" readonly>
-            </li>
-            <li>
-              <input type="text" id="task_path" value="Drawn path" style="font-weight:bold;" readonly>
-            </li>
-            <li>
-              <input type="text" id="task_action" value="Indicated action" style="font-weight:bold;" readonly>
-            </li>
-            <li>
-              <input type="text" id="task_feasibility" value="Indicated feasibility" style="font-weight:bold;" readonly>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-    </div>
+  </div>
 
   </div>
 
@@ -796,13 +729,13 @@
 
     function projectElevatedPathToFrontalView() {
       // 1) Add 0 to third dimension
-      if (subsequent_egocenters.items.length < 2 && car_end_point_pos === null) {
+      if (path_points.items.length < 2) {
         return;
       }
 
       // 1) Create polygons in 2D and append z-axis
       // Scale path points to map coordinates
-      var subsequent_egocenters_map = math.matrix(points.projectPointsToMap(car_end_point_pos));
+      var points_map = math.matrix(path_points.projectPointsToMap());
 
       // Convert path points to polygon side points
       points_map = math.matrix(computePolygonSides(points_map._data, 1))
@@ -880,8 +813,8 @@
       return points_frontal;
     }
 
-    function drawPathOnFrontalView(car_end_point_pos) {
-      if (points.items.length < 2 && car_end_point_pos === null) {
+    function drawPathOnFrontalView() {
+      if (path_points.items.length < 2) {
         context = canvasFrontal.getContext('2d');
         context.clearRect(0, 0, canvasFrontal.width, canvasFrontal.height);
       }
@@ -905,15 +838,54 @@
         );
         context.stroke();
       }
+    }
 
+
+    function projectPointsToMap() {
+      var points_map = [];
+
+      // points are (a,b)
+      // we need to transform them to global view
+      this.eachItem(point => {
+        points_map.push([point.x, point.y]);
+      });
+
+      var points_map = math.matrix(points_map)
+      var canvasTopDown_size = math.matrix([canvasTopDown.width, canvasTopDown.height]) // Width, Height
+
+      var map_patch_corner_x = map_patch.subset(math.index(0))
+      var map_patch_corner_y = map_patch.subset(math.index(1))
+      var map_patch_width = map_patch.subset(math.index(2)) - map_patch.subset(math.index(0))
+      var map_patch_height = map_patch.subset(math.index(3)) - map_patch.subset(math.index(1))
+
+      var canvasTopDown_width = canvasTopDown_size.subset(math.index(0))
+      var canvasTopDown_height = canvasTopDown_size.subset(math.index(1))
+
+      var x = points_map.subset(math.index(math.range(0, points_map.size()[0]), 0))
+      var y = points_map.subset(math.index(math.range(0, points_map.size()[0]), 1))
+
+      // x_trans = map_patch_x_left + (x * (map_patch_x_right - map_patch_x_left) / canvasTopDown_width )
+      var x_trans = math.add(math.divide(math.multiply(x, map_patch_width), canvasTopDown_width), map_patch_corner_x)
+      // y_trans = map_path_y_bottom + (canvasTopDown_height - y) * (map_patch_y_top - map_patch_y_bottom) / canvasTopDown_height
+      var y_trans = math.add(math.divide(math.multiply(math.subtract(canvasTopDown_height, y), map_patch_height), canvasTopDown_height), map_patch_corner_y)
+      //console.log(points_map);
+      //console.log(points_map.size()[0]);
+      //console.log(x_trans);
+      //console.log(y_trans);
+      if (points_map.size()[0] == 1) {
+        x_trans = math.matrix([[x_trans]]);
+        y_trans = math.matrix([[y_trans]]);
+      }
+      var points_map = math.concat(x_trans, y_trans, 1)
+      return points_map
     }
 
     function projectPathToTopDownView(car_end_point_pos) {
-      if (points.items.length < 2 && car_end_point_pos === null) {
+      if (path_points.items.length < 2) {
         return;
       }
       var points_top_down = []
-      points.eachItem(point => {
+      path_points.eachItem(point => {
         points_top_down.push([point.x, point.y]);
       });
 
@@ -927,11 +899,11 @@
       return points_top_down;
     }
 
-    function drawPathOnTopDownView(car_end_point_pos) {
-      if (points.items.length < 2 && car_end_point_pos === null) {
+    function drawPathOnTopDownView() {
+      if (path_points.items.length < 2) {
         return;
       }
-      var projectedPoints = projectPathToTopDownView(car_end_point_pos);
+      var projectedPoints = projectPathToTopDownView();
       var context = canvasTopDown.getContext('2d');
       context.strokeStyle = "rgba(50,205,50,0.75)";
       context.clearRect(0, 0, canvasTopDown.width, canvasTopDown.height);
@@ -949,45 +921,6 @@
         context.stroke();
       }
 
-    }
-
-    function projectPathToTopDown() {
-      var path_map = [];
-
-      // points are (a,b)
-      // we need to transform them to global view
-      this.eachItem(point => {
-        path_map.push([point.x, point.y]);
-      });
-
-      var path_top_down = math.matrix(points_map)
-      var canvasTopDown_size = math.matrix([canvasTopDown.width, canvasTopDown.height]) // Width, Height
-
-      var map_patch_corner_x = map_patch.subset(math.index(0))
-      var map_patch_corner_y = map_patch.subset(math.index(1))
-      var map_patch_width = map_patch.subset(math.index(2)) - map_patch.subset(math.index(0))
-      var map_patch_height = map_patch.subset(math.index(3)) - map_patch.subset(math.index(1))
-
-      var canvasTopDown_width = canvasTopDown_size.subset(math.index(0))
-      var canvasTopDown_height = canvasTopDown_size.subset(math.index(1))
-
-      var x = path_top_down.subset(math.index(math.range(0, path_map.size()[0]), 0))
-      var y = path_top_down.subset(math.index(math.range(0, path_map.size()[0]), 1))
-
-      // x_trans = map_patch_x_left + (x * (map_patch_x_right - map_patch_x_left) / canvasTopDown_width )
-      var x_trans = math.subtract(math.multiply(math.divide(x, map_patch_width), canvasTopDown_width), map_patch_corner_x)
-      // y_trans = map_path_y_bottom + (canvasTopDown_height - y) * (map_patch_y_top - map_patch_y_bottom) / canvasTopDown_height
-      var y_trans = math.subtract(math.multiply(math.divide(math.subtract(y, canvasTopDown_height), map_patch_height), canvasTopDown_height), map_patch_corner_y)
-      //console.log(points_map);
-      //console.log(points_map.size()[0]);
-      //console.log(x_trans);
-      //console.log(y_trans);
-      if (path_top_down.size()[0] == 1) {
-        x_trans = math.matrix([[x_trans]]);
-        y_trans = math.matrix([[y_trans]]);
-      }
-      var path_top_down = math.concat(x_trans, y_trans, 1)
-      return path_top_down
     }
 
     function getMapToCanvas(map_point, map_patch) {
@@ -1030,255 +963,6 @@
 
       front_point = [x_front, y_front]
       return front_point
-    }
-
-
-    function drawCarOnEndPointTopDownView() {
-      if (points.items.length < 2) {
-        return
-      }
-      var currentCarEndPoint = points.items[points.items.length - 1]
-      var beforeCurrentEndPoint = points.items[points.items.length - 2];
-
-      var convertedPoints = car_box_format_relative
-
-      var orig_angle_x1 = math.subset(car_box_format_relative, math.index(2, 0));
-      var orig_angle_y1 = math.subset(car_box_format_relative, math.index(2, 1));
-      var orig_angle_x2 = math.subset(car_box_format_relative, math.index(1, 0));
-      var orig_angle_y2 = math.subset(car_box_format_relative, math.index(1, 1));
-      var orig_angle;
-      if (orig_angle_x2 - orig_angle_x1 == 0) {
-        orig_angle = math.PI / 2;
-      } else {
-        orig_angle = math.atan2(orig_angle_y2 - orig_angle_y1, orig_angle_x2 - orig_angle_x1)
-      }
-
-      var angle;
-      if (currentCarEndPoint.x - beforeCurrentEndPoint.x == 0) {
-        angle = math.PI / 2;
-      } else {
-        angle = math.atan2(currentCarEndPoint.y - beforeCurrentEndPoint.y, currentCarEndPoint.x - beforeCurrentEndPoint.x)
-      }
-      angle -= orig_angle;
-
-      var rot_matrix = math.matrix([
-        [math.cos(angle), -math.sin(angle)],
-        [math.sin(angle), math.cos(angle)]
-      ])
-      convertedPoints = math.transpose(math.multiply(rot_matrix, math.transpose(convertedPoints)))
-
-      var context = canvasTopDown.getContext('2d');
-      context.lineWidth = 3;
-      context.strokeStyle = "rgba(0,255,215,1)";
-      context.beginPath();
-
-
-      for (var i = 0; i < convertedPoints.size()[0] - 1; i++) {
-        context.moveTo(
-          currentCarEndPoint.x + math.subset(convertedPoints, math.index(i, 0)),
-          currentCarEndPoint.y + math.subset(convertedPoints, math.index(i, 1))
-        )
-        context.lineTo(
-          currentCarEndPoint.x + math.subset(convertedPoints, math.index(i + 1, 0)),
-          currentCarEndPoint.y + math.subset(convertedPoints, math.index(i + 1, 1))
-        )
-      }
-
-      context.moveTo(
-        currentCarEndPoint.x + math.subset(convertedPoints, math.index(convertedPoints.size()[0] - 1, 0)),
-        currentCarEndPoint.y + math.subset(convertedPoints, math.index(convertedPoints.size()[0] - 1, 1))
-      )
-      context.lineTo(
-        currentCarEndPoint.x + math.subset(convertedPoints, math.index(0, 0)),
-        currentCarEndPoint.y + math.subset(convertedPoints, math.index(0, 1))
-      )
-
-      // Draw car nose
-      context.moveTo(
-        currentCarEndPoint.x,
-        currentCarEndPoint.y
-      )
-      context.lineTo(
-        currentCarEndPoint.x + math.subset(convertedPoints, math.index(0, 0)) / 2 + math.subset(convertedPoints, math.index(1, 0)) / 2,
-        currentCarEndPoint.y + math.subset(convertedPoints, math.index(0, 1)) / 2 + math.subset(convertedPoints, math.index(1, 1)) / 2
-      )
-
-      context.stroke();
-      //console.log("drew", convertedPoints)
-    }
-
-
-    function drawCarOnEndPointFrontalView() {
-      if (points.items.length < 2) {
-        return
-      }
-      var currentCarEndPoint = points.items[points.items.length - 1]
-      var beforeCurrentEndPoint = points.items[points.items.length - 2];
-
-      var convertedPoints = car_box_format_relative
-
-      var orig_angle_x1 = math.subset(car_box_format_relative, math.index(2, 0));
-      var orig_angle_y1 = math.subset(car_box_format_relative, math.index(2, 1));
-      var orig_angle_x2 = math.subset(car_box_format_relative, math.index(1, 0));
-      var orig_angle_y2 = math.subset(car_box_format_relative, math.index(1, 1));
-      var orig_angle;
-      if (orig_angle_x2 - orig_angle_x1 == 0) {
-        orig_angle = math.PI / 2;
-      } else {
-        orig_angle = math.atan2(orig_angle_y2 - orig_angle_y1, orig_angle_x2 - orig_angle_x1)
-      }
-
-      var angle;
-      if (currentCarEndPoint.x - beforeCurrentEndPoint.x == 0) {
-        angle = math.PI / 2;
-      } else {
-        angle = math.atan2(currentCarEndPoint.y - beforeCurrentEndPoint.y, currentCarEndPoint.x - beforeCurrentEndPoint.x)
-      }
-      angle -= orig_angle;
-
-      var rot_matrix = math.matrix([
-        [math.cos(angle), -math.sin(angle)],
-        [math.sin(angle), math.cos(angle)]
-      ])
-      convertedPoints = math.transpose(math.multiply(rot_matrix, math.transpose(convertedPoints)))
-
-      var x = math.add(convertedPoints.subset(math.index(math.range(0, convertedPoints.size()[0]), 0)), currentCarEndPoint.x)
-      var y = math.add(convertedPoints.subset(math.index(math.range(0, convertedPoints.size()[0]), 1)), currentCarEndPoint.y)
-      convertedPoints = math.concat(x, y, 1)
-
-
-      // Scale object points to map coordinates
-      var canvasTopDown_size = math.matrix([canvasTopDown.width, canvasTopDown.height]) // Width, Height
-
-      var map_patch_corner_x = map_patch.subset(math.index(0))
-      var map_patch_corner_y = map_patch.subset(math.index(1))
-      var map_patch_width = map_patch.subset(math.index(2)) - map_patch.subset(math.index(0))
-      var map_patch_height = map_patch.subset(math.index(3)) - map_patch.subset(math.index(1))
-
-      var canvasTopDown_width = canvasTopDown_size.subset(math.index(0))
-      var canvasTopDown_height = canvasTopDown_size.subset(math.index(1))
-
-      var x = convertedPoints.subset(math.index(math.range(0, convertedPoints.size()[0]), 0))
-      var y = convertedPoints.subset(math.index(math.range(0, convertedPoints.size()[0]), 1))
-
-      // x_trans = map_patch_x_left + (x * (map_patch_x_right - map_patch_x_left) / canvasTopDown_width )
-      var x_trans = math.add(math.divide(math.multiply(x, map_patch_width), canvasTopDown_width), map_patch_corner_x)
-      // y_trans = map_path_y_bottom + (canvasTopDown_height - y) * (map_patch_y_top - map_patch_y_bottom) / canvasTopDown_height
-      var y_trans = math.add(math.divide(math.multiply(math.subtract(canvasTopDown_height, y), map_patch_height), canvasTopDown_height), map_patch_corner_y)
-      convertedPoints = math.concat(x_trans, y_trans, 1)
-
-      // Scale object points to map coordinates
-      var object_points_map = math.matrix(object_points.projectPointsToMap())
-
-      // Find nearest objects to each path x-y point
-
-      nearest_z = math.matrix([])
-      for (var i = 0; i < convertedPoints.size()[0]; i++) {
-        var min_distance = 1e10;
-        path_point = math.subset(convertedPoints, math.index(i, math.range(0, convertedPoints.size()[1])))
-        closest_point_elevation = 0.0
-        for (var j = 0; j < object_points_map.size()[0]; j++) {
-          object_point = math.subset(object_points_map, math.index(j, math.range(0, object_points_map.size()[1])))
-          distance = math.sqrt((path_point._data[0][0] - object_point._data[0][0]) ** 2 + (path_point._data[0][1] - object_point._data[0][1]) ** 2);
-
-          if (distance < min_distance) {
-            min_distance = distance
-            closest_point_elevation = object_elevations[j]
-          }
-        }
-        nearest_z = math.concat(nearest_z, [closest_point_elevation], 0)
-      }
-
-      // nearest_z = nearest_z.resize([nearest_z.size()[0], 1])
-
-      // Find the most common nearest object point 
-      most_common_nearest_z = most_frequent(nearest_z._data)
-      nearest_z = math.multiply(math.ones(nearest_z.size()[0], 1), most_common_nearest_z)
-      nearest_z = nearest_z.resize([nearest_z.size()[0], 1])
-
-      // Append nearest object points
-      convertedPoints = math.concat(convertedPoints, nearest_z, 1)
-
-      // 2) Subtract egopose translation
-      for (var i = 0; i < convertedPoints.size()[0]; i++) {
-        new_point = math.subtract(math.subset(convertedPoints, math.index(i, math.range(0, convertedPoints.size()[1]))), egopose_translation)
-        convertedPoints.subset(math.index(i, math.range(0, convertedPoints.size()[1])), new_point)
-      }
-
-      convertedPoints = math.transpose(convertedPoints)
-
-      // 3) Rotate by egopose rotation matrix
-      convertedPoints = math.multiply(math.transpose(egopose_rotmat), convertedPoints)
-      convertedPoints = math.transpose(convertedPoints)
-
-      // 4) Subtract camera translation
-      for (var i = 0; i < convertedPoints.size()[0]; i++) {
-        new_point = math.subtract(math.subset(convertedPoints, math.index(i, math.range(0, convertedPoints.size()[1]))), cam_translation)
-        convertedPoints.subset(math.index(i, math.range(0, convertedPoints.size()[1])), new_point)
-      }
-      convertedPoints = math.transpose(convertedPoints)
-
-      // 5) Rotate by camera rotation matrix
-      convertedPoints = math.multiply(math.transpose(cam_rotmat), convertedPoints)
-      convertedPoints = math.transpose(convertedPoints)
-      // 6) Map to image view
-      var viewpad = math.matrix(cam_intrinsics)
-      viewpad = math.concat(viewpad, math.zeros(viewpad.size()[0], 1), 1)
-      viewpad = math.concat(viewpad, math.zeros(1, viewpad.size()[1]), 0)
-      viewpad.subset(math.index(3, 3), 1)
-      convertedPoints = math.transpose(convertedPoints)
-      convertedPoints = math.concat(convertedPoints, math.ones(1, convertedPoints.size()[1]), 0)
-      convertedPoints = math.multiply(viewpad, convertedPoints)
-      convertedPoints = math.subset(convertedPoints, math.index(math.range(0, 3), math.range(0, convertedPoints.size()[1])))
-      norm = math.subset(convertedPoints, math.index(2, math.range(0, convertedPoints.size()[1])))
-      norm = math.concat(norm, norm, norm, 0)
-      convertedPoints = math.dotDivide(convertedPoints, norm)
-      convertedPoints = math.subset(convertedPoints, math.index(math.range(0, 2), math.range(0, convertedPoints.size()[1])))
-      convertedPoints = math.transpose(convertedPoints)
-      // Finally transform to the canvas
-      convertedPoints_x = math.multiply(math.subset(convertedPoints, math.index(math.range(0, convertedPoints.size()[0]), 0)), frontalViewRatioW);
-      convertedPoints_y = math.multiply(math.subset(convertedPoints, math.index(math.range(0, convertedPoints.size()[0]), 1)), frontalViewRatioH);
-
-      convertedPoints = math.concat(convertedPoints_x, convertedPoints_y, 1);
-
-      var context = canvasFrontal.getContext('2d');
-      context.lineWidth = 3;
-      context.strokeStyle = "rgba(0,255,215,1)";
-      context.beginPath();
-
-
-      for (var i = 0; i < convertedPoints.size()[0] - 1; i++) {
-        context.moveTo(
-          math.subset(convertedPoints, math.index(i, 0)),
-          math.subset(convertedPoints, math.index(i, 1))
-        )
-        context.lineTo(
-          math.subset(convertedPoints, math.index(i + 1, 0)),
-          math.subset(convertedPoints, math.index(i + 1, 1))
-        )
-      }
-
-      context.moveTo(
-        math.subset(convertedPoints, math.index(convertedPoints.size()[0] - 1, 0)),
-        math.subset(convertedPoints, math.index(convertedPoints.size()[0] - 1, 1))
-      );
-      context.lineTo(
-        math.subset(convertedPoints, math.index(0, 0)),
-        math.subset(convertedPoints, math.index(0, 1))
-      )
-
-      // Draw car nose
-
-      // context.moveTo(
-      //   currentCarEndPoint.x,
-      //   currentCarEndPoint.y
-      // )
-      // context.lineTo(
-      //   currentCarEndPoint.x + math.subset(convertedPoints, math.index(0, 0)) / 2 + math.subset(convertedPoints, math.index(1, 0)) / 2,
-      //   currentCarEndPoint.y + math.subset(convertedPoints, math.index(0, 1)) / 2 + math.subset(convertedPoints, math.index(1, 1)) / 2
-      // )
-
-      context.stroke();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1352,7 +1036,7 @@
       }
       setStyle(pointStyle);
       topDownCtx.beginPath();
-      points.draw();
+      path_points.draw();
       topDownCtx.stroke();
     }
 
@@ -1399,7 +1083,6 @@
 
     var object_elevations;
     var car_box_format_relative = null;
-    var car_end_point_pos = null;
 
 
     var object_points;
@@ -1411,11 +1094,14 @@
       });
     }
 
-    var path;
+    var path_points;
     function createPath() {
       return createList({
         draw: drawPoints,
+        getClosest: getClosest,
+        getClosestIx: getClosestIx,
         projectPointsToMap: projectPointsToMap,
+        projectPathToTopDownView: projectPathToTopDownView,
         drawPathOnFrontalView: drawPathOnFrontalView,
         drawPathOnTopDownView: drawPathOnTopDownView
       });
@@ -1517,12 +1203,6 @@
     // main update function
     function update(timer) {
 
-      if (document.getElementById("actionOther").checked) {
-        document.getElementById("actionOtherText").style.display = '';
-      } else {
-        document.getElementById("actionOtherText").style.display = 'none';
-      }
-
       checkTasks()
       enableSubmit()
 
@@ -1532,14 +1212,6 @@
         return;
       }
       cursor = "crosshair";
-      // toolTip = helpCount < 1 ? "Click to start creating a path for the car!" : "";
-      if (helpCount == 0) {
-        toolTip = "Teal box is our location! Click to add a path node!";
-      } else if (helpCount == 1) {
-        toolTip = "Click again to add another node to path!";
-      } else {
-        toolTip = "";
-      }
       globalTime = timer;
       topDownCtx.setTransform(1, 0, 0, 1, 0, 0); // reset transform
       topDownCtx.globalAlpha = 1;           // reset alpha
@@ -1560,6 +1232,7 @@
         object_elevations = input[idx]["frame_data"]["map_objects_elevation"]
         map_patch = math.matrix(input[idx]["frame_data"]["map_patch"])
         egopose = input[idx]["frame_data"]["ego_translation"]
+        subsequent_egocenters = input[idx]["frame_data"]["subsequent_egocenters"]
 
         for (i = 0; i < object_centers.length; i++) {
           object_center = object_centers[i]
@@ -1567,10 +1240,21 @@
           object_points.add(Point2(object_center[0], object_center[1]))
         }
 
-        if (createdAnnotationsOutputList.length <= idx) {
-          car_anchor = getMapToCanvas(getPointInFront(egopose, egopose_rotmat, 4), map_patch)
-          points.add(Point2(car_anchor[0], car_anchor[1]));
+        car_anchor = getPointInFront(egopose, egopose_rotmat, 0)
+
+        //Filter all points that are too near
+        for (i = 0; i < subsequent_egocenters.length; i++) {
+          path_point = subsequent_egocenters[i]
+          anchor_dist = Math.sqrt(
+            Math.pow((car_anchor[0] - path_point[0]), 2) +
+            Math.pow((car_anchor[1] - path_point[1]), 2)
+          );
+          if (anchor_dist > 2.0) {
+            path_point = getMapToCanvas(path_point, map_patch)
+            path_points.add(Point2(path_point[0], path_point[1]))
+          }
         }
+
 
         first_run = false
       } else {
@@ -1580,14 +1264,10 @@
 
       if (mouse.drag === false) {
         closestLine = undefined;
-        closestPoint = points.getClosest(mouse, minDist);
-        closestPointIx = points.getClosestIx(mouse, minDist);
+        closestPoint = path_points.getClosest(mouse, minDist);
+        closestPointIx = path_points.getClosestIx(mouse, minDist);
         closestObject = object_points.getClosest(mouse, minObjDist);
         closestObjectIx = object_points.getClosestIx(mouse, minObjDist);
-        if (closestPoint || closestLine) {
-          toolTip = "Click drag to move " + (closestPoint ? "point" : "line");
-          cursor = "move";
-        }
       }
       if (mouse.dragStart) {
         //console.log("dragging");
@@ -1597,51 +1277,36 @@
           pointDrag = true;
         }
         else {
-          if (is_drawing_car_end_point) {
-            //car_end_point_pos = Point2(mouse.x, mouse.y);
-            // Draw car
-          } else {
-            closestPoint = Point2(mouse.x, mouse.y);
-            //car_end_point_pos = closestPoint;
-            points.add(closestPoint);
-            dragOffsetX = 0;
-            dragOffsetY = 0;
-            pointDrag = true;
-            helpCount += 1;
+          closestPoint = Point2(mouse.x, mouse.y);
+          //car_end_point_pos = closestPoint;
+          points.add(closestPoint);
+          dragOffsetX = 0;
+          dragOffsetY = 0;
+          pointDrag = true;
 
-            if (points.length() > 1) {
-              // Draw line
-              lines.add(Line(points.items.length - 2, points.items.length - 1));
-            }
+          if (path.length() > 1) {
+            // Draw line
+            lines.add(Line(path_points.items.length - 2, path_points.items.length - 1));
           }
           //console.log(car_end_point_pos)
           // if (!play && $("#video-slider").val() == input[idx]["command_data"]['num_frames']) {
           // if (!play) {
           //   points.drawPathOnFrontalView(car_end_point_pos);
           // }
-          points.drawPathOnFrontalView(car_end_point_pos);
-          points.drawPathOnTopDownView(car_end_point_pos);
+          path_points.drawPathOnFrontalView();
+          path_points.drawPathOnTopDownView();
         }
         mouse.dragStart = false;
 
       } else if (mouse.drag) {
         // Update dragging
-        if (is_drawing_car_end_point) {
-
-
-        } else {
-          cursor = 'none';
-          if (pointDrag && closestPointIx != 0) { // && closestObjectIx == -1) {
-            closestPoint.x = mouse.x + dragOffsetX;
-            closestPoint.y = mouse.y + dragOffsetY;
-          }
+        cursor = 'none';
+        if (pointDrag && closestPointIx != 0) { // && closestObjectIx == -1) {
+          closestPoint.x = mouse.x + dragOffsetX;
+          closestPoint.y = mouse.y + dragOffsetY;
         }
-        // if (!play && $("#video-slider").val() == input[idx]["command_data"]['num_frames']) {
-        // if (!play) {
-        //   points.drawPathOnFrontalView(car_end_point_pos);
-        // }
-        points.drawPathOnFrontalView(car_end_point_pos);
-        points.drawPathOnTopDownView(car_end_point_pos);
+        path_points.drawPathOnFrontalView();
+        path_points.drawPathOnTopDownView();
       } else {
         // Show point
         setStyle(font);
@@ -1660,25 +1325,23 @@
       // }
 
       // draw all points and lines
-      if (points.length() > 1) {
-        points.drawPathOnFrontalView();
-        points.drawPathOnTopDownView();
+      if (path_points.length() > 1) {
+        path_points.drawPathOnFrontalView();
+        path_points.drawPathOnTopDownView();
       }
 
       drawObjectsFrontal(closestObjectIx);
-      drawCarOnEndPointFrontalView();
 
       setStyle(lineStyle);
       topDownCtx.beginPath();
       topDownCtx.stroke();
       setStyle(pointStyle);
       topDownCtx.beginPath();
-      points.draw();
+      path_points.draw();
       topDownCtx.stroke();
 
       // drawPathOnTopDownView()
       drawObjectsTopDown(closestObjectIx);
-      drawCarOnEndPointTopDownView();
 
       // draw highlighted point or line
       setStyle(highlightStyle);
@@ -1686,18 +1349,6 @@
       //if (closestLine) { drawLine(closestLine) }
       if (closestPoint) { drawPoint(closestPoint) }
       topDownCtx.stroke();
-
-      if (helpCount < 2) {
-        setStyle(font);
-        topDownCtx.fillText(toolTip, canvasTopDownCw, 30);
-      }
-
-      canvasTopDown.style.cursor = cursor;
-      if (helpCount < 5) {
-        canvasTopDown.title = toolTip;
-      } else {
-        canvasTopDown.title = "";
-      }
 
       // if (play || $("#video-slider").val() < input[idx]["command_data"]['num_frames']) {
       //   var frontalctx = canvasFrontal.getContext("2d");
@@ -1729,44 +1380,17 @@
       // Get new points
       first_run = true;
       canvasTopDown = undefined;
-      points = createPoints();
+      path_points = createPath();
       referredObjectIx = -1
 
       // Uncheck boxes
       if (firstCall !== true) {
         document.getElementById("commandBox").value = "";
-        document.getElementById("actionLeft").checked = false;
-        document.getElementById("actionRight").checked = false;
-        document.getElementById("actionChangeLaneLeft").checked = false;
-        document.getElementById("actionChangeLaneRight").checked = false;
-        document.getElementById("actionULeft").checked = false;
-        document.getElementById("actionURight").checked = false;
-        document.getElementById("actionPark").checked = false;
-        document.getElementById("actionStop").checked = false;
-        document.getElementById("actionFollow").checked = false;
-        document.getElementById("actionOther").checked = false;
-        document.getElementById("actionOtherText").value = "";
-        document.getElementById("legalityLegal").checked = false;
-        document.getElementById("legalityIllegal").checked = false;
       }
 
       if (createdAnnotationsOutputList.length > idx) {
-        points.items = createdAnnotationsOutputList[idx]["points"];
         referredObjectIx = createdAnnotationsOutputList[idx]["command"]["referredObjectIx"]
         document.getElementById("commandBox").value = createdAnnotationsOutputList[idx]["command"]["commandText"]
-        document.getElementById("actionLeft").checked = createdAnnotationsOutputList[idx]["actions"]["actionLeft"];
-        document.getElementById("actionRight").checked = createdAnnotationsOutputList[idx]["actions"]["actionRight"];
-        document.getElementById("actionChangeLaneLeft").checked = createdAnnotationsOutputList[idx]["actions"]["actionChangeLaneLeft"];
-        document.getElementById("actionChangeLaneRight").checked = createdAnnotationsOutputList[idx]["actions"]["actionChangeLaneRight"];
-        document.getElementById("actionULeft").checked = createdAnnotationsOutputList[idx]["actions"]["actionULeft"];
-        document.getElementById("actionURight").checked = createdAnnotationsOutputList[idx]["actions"]["actionURight"];
-        document.getElementById("actionPark").checked = createdAnnotationsOutputList[idx]["actions"]["actionPark"];
-        document.getElementById("actionStop").checked = createdAnnotationsOutputList[idx]["actions"]["actionStop"];
-        document.getElementById("actionFollow").checked = createdAnnotationsOutputList[idx]["actions"]["actionFollow"];
-        document.getElementById("actionOther").checked = createdAnnotationsOutputList[idx]["actions"]["actionOther"];
-        document.getElementById("actionOtherText").value = createdAnnotationsOutputList[idx]["actions"]["actionOtherText"];
-        document.getElementById("legalityLegal").checked = createdAnnotationsOutputList[idx]["legality"]["legalityLegal"];
-        document.getElementById("legalityIllegal").checked = createdAnnotationsOutputList[idx]["legality"]["legalityIllegal"];
       }
 
       object_points = createObjectPoints();
@@ -1794,29 +1418,12 @@
     function storeCurrent() {
       // Storing the current points
       var out = {
-        "points": points.items,
+        "scene_token": input[idx]["frame_data"]["scene_token"],
         "sample_token": input[idx]["frame_data"]["sample_token"],
         "command": {
           "commandText": document.getElementById("commandBox").value,
           "referredObjectIx": referredObjectIx,
         },
-        "actions": {
-          "actionLeft": document.getElementById("actionLeft").checked,
-          "actionRight": document.getElementById("actionRight").checked,
-          "actionChangeLaneLeft": document.getElementById("actionChangeLaneLeft").checked,
-          "actionChangeLaneRight": document.getElementById("actionChangeLaneRight").checked,
-          "actionULeft": document.getElementById("actionULeft").checked,
-          "actionURight": document.getElementById("actionURight").checked,
-          "actionPark": document.getElementById("actionPark").checked,
-          "actionStop": document.getElementById("actionStop").checked,
-          "actionFollow": document.getElementById("actionFollow").checked,
-          "actionOther": document.getElementById("actionOther").checked,
-          "actionOtherText": document.getElementById("actionOtherText").value,
-        },
-        "legality": {
-          "legalityLegal": document.getElementById("legalityLegal").checked,
-          "legalityIllegal": document.getElementById("legalityIllegal").checked,
-        }
       }
       if (createdAnnotationsOutputList.length > idx) {
         createdAnnotationsOutputList[idx] = out;
@@ -1828,38 +1435,12 @@
 
     function checkTasks() {
 
-      drawn_path = false
       written_command = false
       selected_object = false
-      any_checked_actions = false
-      any_checked_legality = false
-
-      if (points.items.length >= 2) {
-        drawn_path = true
-      }
 
       if (document.getElementById("commandBox").value) { written_command = true }
       if (referredObjectIx > -1) { selected_object = true }
 
-      if (document.getElementById("actionLeft").checked) { any_checked_actions = true }
-      if (document.getElementById("actionRight").checked) { any_checked_actions = true }
-      if (document.getElementById("actionChangeLaneLeft").checked) { any_checked_actions = true }
-      if (document.getElementById("actionChangeLaneRight").checked) { any_checked_actions = true }
-      if (document.getElementById("actionULeft").checked) { any_checked_actions = true }
-      if (document.getElementById("actionURight").checked) { any_checked_actions = true }
-      if (document.getElementById("actionPark").checked) { any_checked_actions = true }
-      if (document.getElementById("actionStop").checked) { any_checked_actions = true }
-      if (document.getElementById("actionFollow").checked) { any_checked_actions = true }
-      if (document.getElementById("actionOther").checked && document.getElementById("actionOtherText").value) { any_checked_actions = true }
-
-      if (document.getElementById("legalityLegal").checked) { any_checked_legality = true }
-      if (document.getElementById("legalityIllegal").checked) { any_checked_legality = true }
-
-      if (drawn_path) {
-        document.getElementById("task_path").style.backgroundColor = "#5ae406"
-      } else {
-        document.getElementById("task_path").style.backgroundColor = "#f93005"
-      }
       if (selected_object) {
         document.getElementById("task_object").style.backgroundColor = "#5ae406"
       } else {
@@ -1869,16 +1450,6 @@
         document.getElementById("task_command").style.backgroundColor = "#5ae406"
       } else {
         document.getElementById("task_command").style.backgroundColor = "#f93005"
-      }
-      if (any_checked_actions) {
-        document.getElementById("task_action").style.backgroundColor = "#5ae406"
-      } else {
-        document.getElementById("task_action").style.backgroundColor = "#f93005"
-      }
-      if (any_checked_legality) {
-        document.getElementById("task_feasibility").style.backgroundColor = "#5ae406"
-      } else {
-        document.getElementById("task_feasibility").style.backgroundColor = "#f93005"
       }
 
     }
@@ -1891,39 +1462,19 @@
       } else {
         for (var i = 0; i < num_images; i++) {
           createdAnnotationsOutput = createdAnnotationsOutputList[i];
-          if (createdAnnotationsOutput["points"].length < 2) {
+          written_command = false
+          selected_object = false
+          any_checked_actions = false
+          any_checked_legality = false
+
+          createdAnnotationsOutputCommand = createdAnnotationsOutput["command"];
+          if (createdAnnotationsOutputCommand["commandText"]) { written_command = true }
+          if (createdAnnotationsOutputCommand["referredObjectIx"] > -1) { selected_object = true }
+
+          if ((written_command == false) || (selected_object == false)) {
             $('#submit-btn').prop('disabled', true);
-          } else {
-            written_command = false
-            selected_object = false
-            any_checked_actions = false
-            any_checked_legality = false
-
-            createdAnnotationsOutputCommand = createdAnnotationsOutput["command"];
-            if (createdAnnotationsOutputCommand["commandText"]) { written_command = true }
-            if (createdAnnotationsOutputCommand["referredObjectIx"] > -1) { selected_object = true }
-
-            createdAnnotationsOutputActions = createdAnnotationsOutput["actions"];
-            if (createdAnnotationsOutputActions["actionLeft"]) { any_checked_actions = true }
-            if (createdAnnotationsOutputActions["actionRight"]) { any_checked_actions = true }
-            if (createdAnnotationsOutputActions["actionChangeLaneLeft"]) { any_checked_actions = true }
-            if (createdAnnotationsOutputActions["actionChangeLaneRight"]) { any_checked_actions = true }
-            if (createdAnnotationsOutputActions["actionULeft"]) { any_checked_actions = true }
-            if (createdAnnotationsOutputActions["actionURight"]) { any_checked_actions = true }
-            if (createdAnnotationsOutputActions["actionPark"]) { any_checked_actions = true }
-            if (createdAnnotationsOutputActions["actionStop"]) { any_checked_actions = true }
-            if (createdAnnotationsOutputActions["actionFollow"]) { any_checked_actions = true }
-            if (createdAnnotationsOutputActions["actionOther"] && createdAnnotationsOutputActions["actionOtherText"]) { any_checked_actions = true }
-
-            createdAnnotationsOutputLegality = createdAnnotationsOutput["legality"];
-            if (createdAnnotationsOutputLegality["legalityLegal"]) { any_checked_legality = true }
-            if (createdAnnotationsOutputLegality["legalityIllegal"]) { any_checked_legality = true }
-
-            if ((any_checked_actions == false) || (any_checked_legality == false) || (written_command == false) || (selected_object == false)) {
-              $('#submit-btn').prop('disabled', true);
-            }
-
           }
+
         }
       }
     }
