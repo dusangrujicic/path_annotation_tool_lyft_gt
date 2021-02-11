@@ -1223,44 +1223,11 @@
         closestObject = object_points.getClosest(mouse, minObjDist);
         closestObjectIx = object_points.getClosestIx(mouse, minObjDist);
       }
-      if (mouse.dragStart) {
-        //console.log("dragging");
-        if (closestPoint) {
-          dragOffsetX = closestPoint.x - mouse.x;
-          dragOffsetY = closestPoint.y - mouse.y;
-          pointDrag = true;
-        }
-        else {
-          closestPoint = Point2(mouse.x, mouse.y);
-          //car_end_point_pos = closestPoint;
-          dragOffsetX = 0;
-          dragOffsetY = 0;
-          pointDrag = true;
-          //console.log(car_end_point_pos)
-          // if (!play && $("#video-slider").val() == input[idx]["command_data"]['num_frames']) {
-          // if (!play) {
-          //   points.drawPathOnFrontalView(car_end_point_pos);
-          // }
-          path_points.drawPathOnFrontalView();
-          path_points.drawPathOnTopDownView();
-        }
-        mouse.dragStart = false;
 
-      } else if (mouse.drag) {
-        // Update dragging
-        cursor = 'none';
-        if (pointDrag && closestPointIx != 0) { // && closestObjectIx == -1) {
-          closestPoint.x = mouse.x + dragOffsetX;
-          closestPoint.y = mouse.y + dragOffsetY;
-        }
-        path_points.drawPathOnFrontalView();
-        path_points.drawPathOnTopDownView();
-      } else {
-        // Show point
-        setStyle(font);
-        showPointCanvas = Point2(mouse.x, mouse.y);
-        showPointMap = getCanvasToMap([showPointCanvas.x, showPointCanvas.y], map_patch)
-      }
+      // Show point
+      setStyle(font);
+      showPointCanvas = Point2(mouse.x, mouse.y);
+      showPointMap = getCanvasToMap([showPointCanvas.x, showPointCanvas.y], map_patch)
 
       // if (!play) {
       //   // lines.draw();
@@ -1315,6 +1282,8 @@
     // Update the index, and save the text in the text area and render new data.
     function set_idx(new_idx, firstCall) {
       if (new_idx < 0 || new_idx >= num_images) return;
+
+      document.activeElement.blur();
 
       // back up current data.
       if (firstCall !== true) {
@@ -1436,7 +1405,7 @@
         set_idx(idx + 1);
       });
       $('#prev-btn').click(function () {
-        set_idx(idx - 1)
+        set_idx(idx - 1);
       });
 
       // Set up submit handler.
