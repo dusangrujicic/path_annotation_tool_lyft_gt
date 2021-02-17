@@ -57,7 +57,7 @@ for scene_rec in scene_recs:
     for i, sample_token in enumerate(sample_tokens):
         name = scene_token + "_" + sample_token
         subsequent_sample_tokens = sample_tokens[(i + 1) :]
-        if i == 5:
+        if i == 100:
             break
         subsequent_egoposes = []
         for subsequent_sample_token in subsequent_sample_tokens:
