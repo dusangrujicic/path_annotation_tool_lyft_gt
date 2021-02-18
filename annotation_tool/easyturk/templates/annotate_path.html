@@ -313,7 +313,8 @@
     var frontalViewRatioW;
     var frontalViewRatioH;
     var referredObjectIx;
-
+    var selectedFrameToken;
+    var selectedFrameIx;
     // Use the current index to update the image and description.
     function render() {
       // Set up the image
@@ -1130,11 +1131,11 @@
           if (closestObjectIx == referredObjectIx) {
             referredObjectIx = -1;
             selectedFrameIx = -1;
-            selectedFrameToken = ""
+            selectedFrameToken = "";
           } else {
             referredObjectIx = closestObjectIx;
             selectedFrameIx = frameIx;
-            selectedFrameToken = ""
+            selectedFrameToken = input[idx]["frame_data"]["scene_token"]
           }
         }
       }
