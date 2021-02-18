@@ -156,9 +156,6 @@
       <div class='legend-scale'>
         <ul class='legend-labels'>
           <li>
-            <input type="text" id="task_frame" value="Selected frame" style="font-weight:bold;" readonly>
-          </li>
-          <li>
             <input type="text" id="task_object" value="Selected object" style="font-weight:bold;" readonly>
           </li>
           <li>
@@ -166,6 +163,7 @@
           </li>
         </ul>
       </div>
+      <button id='store-frame-btn' tabindex="0" class='btn btn-lg btn-primary' disabled>Store Frame Data</button>
     </div>
 
   </div>
@@ -397,6 +395,14 @@
         playVideo();
       }
     })
+
+    $('#store-frame-btn').click(function () {
+      storeFrameData()
+      referredObjectIx = [];
+      selectedFrameToken = "";
+      selectedFrameIx = -1;
+      document.getElementById("commandBox").value = "";
+    });
 
     function playVideo() {
       var currImg = Number($("#video-slider").val());
@@ -1117,7 +1123,8 @@
     function update(timer) {
 
       checkTasks()
-      // enableSubmit()
+      enableSubmit()
+      enableStoreFrameData()
 
       if (canvasTopDown === undefined) {
         console.log("not initiliased yet!!");
@@ -1161,11 +1168,7 @@
             path_points.add(Point2(path_point[0], path_point[1]))
           }
         }
-
-
         first_run = false
-      } else {
-        storeCurrent();
       }
 
 
@@ -1220,8 +1223,6 @@
     // Update the index, and save the text in the text area and render new data.
     function set_scene() {
       document.activeElement.blur();
-      // back up current data.
-      storeCurrent();
       // increment index.
       frameIx = 0;
       // Render new data.
@@ -1232,15 +1233,13 @@
       referredObjectIx = [];
       selectedFrameToken = "";
       selectedFrameIx = -1;
-      // Uncheck boxes
       document.getElementById("commandBox").value = "";
       object_points = createObjectPoints();
       lines = createLines();
       render();
     }
 
-    function storeCurrent() {
-      // Storing the current points
+    function storeFrameData() {
       var out = {
         "scene_token": input["frame_data"]["scene_token"],
         "command": {
@@ -1250,24 +1249,19 @@
           "selectedFrameIx": selectedFrameIx,
         },
       }
-      if (createdAnnotationsOutputList.length > idx) {
-        createdAnnotationsOutputList[idx] = out;
-      } else {
-        createdAnnotationsOutputList.push(out);
-      }
+      createdAnnotationsOutputList.push(out);
+    }
 
+    function removeFrameData(index) {
+      createdAnnotationsOutputList.splice(index, 1);
     }
 
     function checkTasks() {
-
       written_command = false
       selected_object = false
-      selected_frame = false
-
       if (document.getElementById("commandBox").value) { written_command = true }
       if (referredObjectIx.length) { selected_object = true }
       if (selectedFrameToken) { selected_frame = true }
-
       if (selected_object) {
         document.getElementById("task_object").style.backgroundColor = "#5ae406"
       } else {
@@ -1278,34 +1272,42 @@
       } else {
         document.getElementById("task_command").style.backgroundColor = "#f93005"
       }
-      if (selected_frame) {
-        document.getElementById("task_frame").style.backgroundColor = "#5ae406"
-      } else {
-        document.getElementById("task_frame").style.backgroundColor = "#f93005"
-      }
+    }
 
+    function enableStoreFrameData() {
+      $('#store-frame-btn').prop('disabled', false);
+
+      written_command = false
+      selected_object = false
+
+      if (document.getElementById("commandBox").value) { written_command = true }
+      if (referredObjectIx.length) { selected_object = true }
+      if ((written_command == false) || (selected_object == false)) {
+        $('#store-frame-btn').prop('disabled', true);
+      }
     }
 
     function enableSubmit() {
       // Enable the submit button only if all the frames are annotated
       $('#submit-btn').prop('disabled', false);
-      for (var i = 0; i < createdAnnotationsOutputList.length; i++) {
-        createdAnnotationsOutput = createdAnnotationsOutputList[i];
-        written_command = false
-        selected_object = false
-        selected_frame = false
-        any_checked_actions = false
-        any_checked_legality = false
+      if (createdAnnotationsOutputList.length == 0) {
+        $('#submit-btn').prop('disabled', true);
+      } else {
+        for (var i = 0; i < createdAnnotationsOutputList.length; i++) {
+          createdAnnotationsOutput = createdAnnotationsOutputList[i];
+          written_command = false
+          selected_object = false
+          any_checked_actions = false
+          any_checked_legality = false
 
-        createdAnnotationsOutputCommand = createdAnnotationsOutput["command"];
-        if (createdAnnotationsOutputCommand["commandText"]) { written_command = true }
-        if (createdAnnotationsOutputCommand["referredObjectIx"].length) { selected_object = true }
-        if (createdAnnotationsOutputCommand["selectedFrameToken"] && (createdAnnotationsOutputCommand["selectedFrameIx"] > -1)) { selected_frame = true }
+          createdAnnotationsOutputCommand = createdAnnotationsOutput["command"];
+          if (createdAnnotationsOutputCommand["commandText"]) { written_command = true }
+          if (createdAnnotationsOutputCommand["referredObjectIx"].length) { selected_object = true }
 
-        if ((written_command == false) || (selected_object == false) || (selected_frame == false)) {
-          $('#submit-btn').prop('disabled', true);
+          if ((written_command == false) || (selected_object == false)) {
+            $('#submit-btn').prop('disabled', true);
+          }
         }
-
       }
     }
 
@@ -1316,8 +1318,6 @@
       // Set up submit handler.
       easyturk.setupSubmit();
       $('#submit-btn').click(function () {
-        storeCurrent();
-
         // otherwise we're good. HIT done!
         easyturk.setOutput(createdAnnotationsOutputList);
       });
