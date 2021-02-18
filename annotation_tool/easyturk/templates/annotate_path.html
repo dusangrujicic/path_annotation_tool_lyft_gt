@@ -170,19 +170,6 @@
 
   </div>
 
-  <div class='row'>
-    <div class='col-xs-12 text-center' id='button-div'>
-      <button id='prev-btn' tabindex="1" class='btn btn-lg btn-primary' disabled>Back</button>
-      <span id='counter'>
-        <span class='counter-top'></span> / <span class='counter-bottom'></span>
-      </span>
-      <button id='next-btn' tabindex="0" class='btn btn-lg btn-primary' disabled>Next</button>
-    </div>
-  </div>
-
-  </div>
-  </div>
-
 
   <!--IMPORTANT: This import contains all the functions you need to read in your input data and send back worker outputs.-->
   {% include "easyturk.html" %}
@@ -200,20 +187,12 @@
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    var DEFAULT_INPUT = [
-      {
-        "frontal": "https://lyft-path.s3.eu-west-3.amazonaws.com/tmp/frontal_ix.jpg",
-        "top-down": "https://lyft-path.s3.eu-west-3.amazonaws.com/tmp/top_down_ix.png",
-        "frame_data_url": "https://lyft-path.s3.eu-west-3.amazonaws.com/tmp/frame_ix_data.json",
-        "video_data": { "max_frame_ind": 99 },
-      },
-      {
-        "frontal": "https://lyft-path.s3.eu-west-3.amazonaws.com/tmp/frontal_ix.jpg",
-        "top-down": "https://lyft-path.s3.eu-west-3.amazonaws.com/tmp/top_down_ix.png",
-        "frame_data_url": "https://lyft-path.s3.eu-west-3.amazonaws.com/tmp/frame_ix_data.json",
-        "video_data": { "max_frame_ind": 91 },
-      }
-    ];
+    var DEFAULT_INPUT = {
+      "frontal": "https://lyft-path.s3.eu-west-3.amazonaws.com/tmp/frontal_ix.jpg",
+      "top-down": "https://lyft-path.s3.eu-west-3.amazonaws.com/tmp/top_down_ix.png",
+      "frame_data_url": "https://lyft-path.s3.eu-west-3.amazonaws.com/tmp/frame_ix_data.json",
+      "video_data": { "max_frame_ind": 99 },
+    };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -228,12 +207,10 @@
 
     // If this is a HIT on AMT, then replace the default input with the real input.
     var input = easyturk.getInput(DEFAULT_INPUT);
-    var num_images = input.length;
 
     // Some variables to track state of the HIT.
     var idx = 0;
     var enabled = false;
-    var output = [];
     var bb = null;
 
     var play = false;
@@ -246,37 +223,28 @@
         enable_hit();
       }
       // Set up empty description blobs.
-      for (var k = 0; k < num_images; k++) {
-        input[k].objects = [];
-        for (var l = 0; l < input[k].num_objects; l++) {
-          input[k].objects.push({ 'name': '', 'rect': null });
-        }
-        output.push(input[k]);
+      input.objects = [];
+      for (var l = 0; l < input.num_objects; l++) {
+        input.objects.push({ 'name': '', 'rect': null });
       }
 
       // Load the images.
-      _.each(output, function (input_elem) {
-        // var imgUrl = input_elem['url'];//.replace(`_ix`, `_${input[idx]["command_data"]['max_frame_ind']}`);
-        var imgUrl = input_elem['frontal'].replace(`_ix`, `_${frameIx}`);
-        var img = new Image();
-        img.onload = function () {
-          output[idx].image_width = img.width;
-        };
-        img.src = imgUrl;
-
-      });
+      var imgUrl = input['frontal'].replace(`_ix`, `_${frameIx}`);
+      var img = new Image();
+      img.onload = function () {
+        output.image_width = img.width;
+      };
+      img.src = imgUrl;
 
       $.ajaxSetup({
         async: false
       });
       // Fetch the frame data
-      _.each(input, function (input_elem) {
-        var dataUrl = input_elem['frame_data_url'].replace(`_ix`, `_${frameIx}`);
+      var dataUrl = input['frame_data_url'].replace(`_ix`, `_${frameIx}`);
 
-        $.getJSON(dataUrl, function (data) {
-          console.log(data);
-          input_elem["frame_data"] = data
-        })
+      $.getJSON(dataUrl, function (data) {
+        console.log(data);
+        input["frame_data"] = data
       })
       console.log(input)
       $.ajaxSetup({
@@ -284,22 +252,7 @@
       });
 
       // Render the objects and the bounding box interaction.
-      set_idx(idx, true);
-    }
-
-    function add_existing_boxes(bb) {
-      /** Draws the existing bounding boxes to the image.
-       *
-       * Args:
-       *   bb: ETJS.BBoxDrawer instance.
-       */
-      for (var k = 0; k < output[idx].num_objects; k++) {
-        obj = output[idx].objects[k];
-        if (obj.rect != null) {
-          index = bb.addStaticBox(obj.rect);
-          obj.static_index = index;
-        }
-      }
+      set_scene();
     }
 
     // For transform to image and map
@@ -319,17 +272,17 @@
     function render() {
       // Set up the image
       play = false;
-      $("#frontal-view").attr('src', input[idx]['frontal'].replace(`_ix`, `_${frameIx}`));
-      $("#video-slider").attr("max", input[idx]["video_data"]["max_frame_ind"])
+      $("#frontal-view").attr('src', input['frontal'].replace(`_ix`, `_${frameIx}`));
+      $("#video-slider").attr("max", input["video_data"]["max_frame_ind"])
       $("#video-slider").val(frameIx);
-      $("#top-down-view-hidden").attr('src', input[idx]['top-down'].replace(`_ix`, `_${frameIx}`));
+      $("#top-down-view-hidden").attr('src', input['top-down'].replace(`_ix`, `_${frameIx}`));
 
       // Top Down View
       var image = new Image();
       image.onload = function () {
         drawImage(image);
       }
-      image.src = input[idx]['top-down'].replace(`_ix`, `_${frameIx}`);
+      image.src = input['top-down'].replace(`_ix`, `_${frameIx}`);
 
       // Frontal Image
       var imageFrontal = new Image();
@@ -340,35 +293,18 @@
         frontalViewRatioW = (canvasFrontal.width / 1920);
         frontalViewRatioH = (canvasFrontal.height / 1080);
       }
-      imageFrontal.src = input[idx]['frontal'].replace(`_ix`, `_${frameIx}`);
+      imageFrontal.src = input['frontal'].replace(`_ix`, `_${frameIx}`);
 
-      frame_token = input[idx]["frame_data"]["sample_token"]
-      egopose_translation = math.matrix([input[idx]["frame_data"]["ego_translation"]])
-      egopose_rotmat = math.matrix(input[idx]["frame_data"]["ego_rotation"])
-      cam_translation = math.matrix([input[idx]["frame_data"]["cam_translation"]])
-      cam_rotmat = math.matrix(input[idx]["frame_data"]["cam_rotation"]);
-      cam_intrinsics = math.matrix(input[idx]["frame_data"]["cam_intrinsic"]);
-      map_patch = math.matrix(input[idx]["frame_data"]["map_patch"]);
-      subsequent_egocenters = input[idx]["frame_data"]["subsequent_egocenters"]
+      frame_token = input["frame_data"]["sample_token"]
+      egopose_translation = math.matrix([input["frame_data"]["ego_translation"]])
+      egopose_rotmat = math.matrix(input["frame_data"]["ego_rotation"])
+      cam_translation = math.matrix([input["frame_data"]["cam_translation"]])
+      cam_rotmat = math.matrix(input["frame_data"]["cam_rotation"]);
+      cam_intrinsics = math.matrix(input["frame_data"]["cam_intrinsic"]);
+      map_patch = math.matrix(input["frame_data"]["map_patch"]);
+      subsequent_egocenters = input["frame_data"]["subsequent_egocenters"]
 
       first_run = true;
-
-      // Refresh the counter
-      $('.counter-top').text(idx + 1);
-      $('.counter-bottom').text(input.length);
-
-      // If the UI is enabled, enable or disable the buttons depending on
-      // the index.
-      if (enabled) {
-        $('#prev-btn').prop('disabled', false);
-        $('#next-btn').prop('disabled', false);
-        if (idx == 0) {
-          $('#prev-btn').prop('disabled', true);
-        }
-        if (idx == input.length - 1) {
-          $('#next-btn').prop('disabled', true);
-        }
-      }
     }
 
     hRatio = null;
@@ -407,21 +343,21 @@
 
     function refreshGlobals() {
       // Update data
-      frame_token = input[idx]["frame_data"]["sample_token"]
-      egopose_translation = math.matrix([input[idx]["frame_data"]["ego_translation"]])
-      egopose_rotmat = math.matrix(input[idx]["frame_data"]["ego_rotation"])
-      cam_translation = math.matrix([input[idx]["frame_data"]["cam_translation"]])
-      cam_rotmat = math.matrix(input[idx]["frame_data"]["cam_rotation"]);
-      cam_intrinsics = math.matrix(input[idx]["frame_data"]["cam_intrinsic"]);
-      map_patch = math.matrix(input[idx]["frame_data"]["map_patch"]);
-      subsequent_egocenters = input[idx]["frame_data"]["subsequent_egocenters"]
+      frame_token = input["frame_data"]["sample_token"]
+      egopose_translation = math.matrix([input["frame_data"]["ego_translation"]])
+      egopose_rotmat = math.matrix(input["frame_data"]["ego_rotation"])
+      cam_translation = math.matrix([input["frame_data"]["cam_translation"]])
+      cam_rotmat = math.matrix(input["frame_data"]["cam_rotation"]);
+      cam_intrinsics = math.matrix(input["frame_data"]["cam_intrinsic"]);
+      map_patch = math.matrix(input["frame_data"]["map_patch"]);
+      subsequent_egocenters = input["frame_data"]["subsequent_egocenters"]
 
       // Render new data.
       // Get new points
       first_run = true;
       canvasTopDown = undefined;
       path_points = createPath();
-      referredObjectIx = -1;
+      referredObjectIx = [];
       selectedFrameToken = "";
       selectedFrameIx = -1;
 
@@ -435,17 +371,17 @@
     $(document).on('change', "#video-slider", function (e) {
       var currIx = $(this).val()
       frameIx = currIx
-      $("#frontal-view").attr('src', input[idx]['frontal'].replace(`_ix`, `_${currIx}`));
-      $("#top-down-view-hidden").attr('src', input[idx]['top-down'].replace(`_ix`, `_${currIx}`));
+      $("#frontal-view").attr('src', input['frontal'].replace(`_ix`, `_${currIx}`));
+      $("#top-down-view-hidden").attr('src', input['top-down'].replace(`_ix`, `_${currIx}`));
       var image = new Image();
       image.onload = function () {
         drawImage(image);
       }
-      image.src = input[idx]['top-down'].replace(`_ix`, `_${currIx}`);
+      image.src = input['top-down'].replace(`_ix`, `_${currIx}`);
 
-      var dataUrl = input[idx]['frame_data_url'].replace(`_ix`, `_${currIx}`);
+      var dataUrl = input['frame_data_url'].replace(`_ix`, `_${currIx}`);
       $.getJSON(dataUrl, function (data) {
-        input[idx]["frame_data"] = data
+        input["frame_data"] = data
       })
       refreshGlobals();
 
@@ -464,7 +400,7 @@
 
     function playVideo() {
       var currImg = Number($("#video-slider").val());
-      var maxImg = input[idx]["video_data"]['max_frame_ind'];
+      var maxImg = input["video_data"]['max_frame_ind'];
       function changeImgs() {
         if (currImg <= maxImg) {
           $("#video-slider").val(currImg);
@@ -548,10 +484,10 @@
     }
 
     function drawObjectsFrontal(special_index = -1) {
-      var objectsToDraw = input[idx]["frame_data"]["image_objects_bbox"];
+      var objectsToDraw = input["frame_data"]["image_objects_bbox"];
 
       for (var i = 0; i < objectsToDraw.length; i++) {
-        if (i == referredObjectIx) {
+        if (referredObjectIx.includes(i)) {
           color = "rgba(255,226,0,1)";
         } else if (i == special_index) {
           color = "rgba(205,50,50,1)";
@@ -566,11 +502,7 @@
     }
 
     function drawObjectsTopDown(special_index = -1) {
-      var objectsToDraw = math.matrix(input[idx]["frame_data"]["map_objects_bbox"]);
-
-      // console.log(objectsToDraw)
-      // console.log(map_patch)
-      // throw new Error();
+      var objectsToDraw = math.matrix(input["frame_data"]["map_objects_bbox"]);
 
       // Step 1: Convert points to canvas coords
 
@@ -607,7 +539,7 @@
       }
 
       for (var i = 0; i < convertedPoints.size()[0]; i++) {
-        if (i == referredObjectIx) {
+        if (referredObjectIx.includes(i)) {
           context.strokeStyle = "rgba(255,226,0,1)";
         } else if (i == special_index) {
           context.strokeStyle = "rgba(205,50,50,1)";
@@ -632,7 +564,7 @@
 
 
     function drawCarStartPoint() {
-      var ego_box = math.matrix(input[idx]["frame_data"]["egobbox"]);
+      var ego_box = math.matrix(input["frame_data"]["egobbox"]);
 
       // Step 1: Convert points to canvas coords
       var map_patch_corner_x = map_patch.subset(math.index(0))
@@ -1128,15 +1060,19 @@
       var keycode = (event.keyCode ? event.keyCode : event.which);
       if (keycode = '115') {
         if (closestObjectIx > -1) {
-          if (closestObjectIx == referredObjectIx) {
-            referredObjectIx = -1;
-            selectedFrameIx = -1;
-            selectedFrameToken = "";
+          if (referredObjectIx.includes(closestObjectIx)) {
+            referredObjectIx = referredObjectIx.filter(function (value, index, arr) {
+              return value != closestObjectIx;
+            });
           } else {
-            referredObjectIx = closestObjectIx;
+            referredObjectIx.push(closestObjectIx);
             selectedFrameIx = frameIx;
-            selectedFrameToken = input[idx]["frame_data"]["scene_token"]
+            selectedFrameToken = input["frame_data"]["scene_token"]
           }
+        }
+        if (referredObjectIx.length == 0) {
+          selectedFrameIx = -1;
+          selectedFrameToken = "";
         }
       }
     });
@@ -1181,7 +1117,7 @@
     function update(timer) {
 
       checkTasks()
-      enableSubmit()
+      // enableSubmit()
 
       if (canvasTopDown === undefined) {
         console.log("not initiliased yet!!");
@@ -1197,20 +1133,13 @@
       var context = canvasFrontal.getContext('2d');
       context.clearRect(0, 0, canvasFrontal.width, canvasFrontal.height);
 
-      // if (play) {
-      //   var frontalctx = canvasFrontal.getContext("2d");
-      //   frontalctx.clearRect(0, 0, canvasFrontal.width, canvasFrontal.height);
-      // }
-
-
-      // if (first_run && !play) {
       if (first_run) {
-        frame_token = input[idx]["frame_data"]["sample_token"]
-        object_centers = input[idx]["frame_data"]["map_objects_center"]
-        object_elevations = input[idx]["frame_data"]["map_objects_elevation"]
-        map_patch = math.matrix(input[idx]["frame_data"]["map_patch"])
-        egopose = input[idx]["frame_data"]["ego_translation"]
-        subsequent_egocenters = input[idx]["frame_data"]["subsequent_egocenters"]
+        frame_token = input["frame_data"]["sample_token"]
+        object_centers = input["frame_data"]["map_objects_center"]
+        object_elevations = input["frame_data"]["map_objects_elevation"]
+        map_patch = math.matrix(input["frame_data"]["map_patch"])
+        egopose = input["frame_data"]["ego_translation"]
+        subsequent_egocenters = input["frame_data"]["subsequent_egocenters"]
 
         for (i = 0; i < object_centers.length; i++) {
           object_center = object_centers[i]
@@ -1289,65 +1218,31 @@
 
 
     // Update the index, and save the text in the text area and render new data.
-    function set_idx(new_idx, firstCall) {
-      if (new_idx < 0 || new_idx >= num_images) return;
+    function set_scene() {
       document.activeElement.blur();
       // back up current data.
-      if (firstCall !== true) {
-        storeCurrent();
-      }
+      storeCurrent();
       // increment index.
-      idx = new_idx;
       frameIx = 0;
       // Render new data.
       // Get new points
       first_run = true;
       canvasTopDown = undefined;
       path_points = createPath();
-      referredObjectIx = -1;
+      referredObjectIx = [];
       selectedFrameToken = "";
       selectedFrameIx = -1;
       // Uncheck boxes
-      if (firstCall !== true) {
-        document.getElementById("commandBox").value = "";
-      }
-      if (createdAnnotationsOutputList.length > idx) {
-        referredObjectIx = createdAnnotationsOutputList[idx]["command"]["referredObjectIx"]
-        selectedFrameToken = createdAnnotationsOutputList[idx]["command"]["selectedFrameToken"]
-        selectedFrameIx = createdAnnotationsOutputList[idx]["command"]["selectedFrameIx"]
-        document.getElementById("commandBox").value = createdAnnotationsOutputList[idx]["command"]["commandText"]
-        if (selectedFrameIx > -1) {
-          frameIx = selectedFrameIx
-        }
-        else { frameIx = 0 }
-      }
-
+      document.getElementById("commandBox").value = "";
       object_points = createObjectPoints();
       lines = createLines();
       render();
-
-      // If the UI is enabled, enable or disable the buttons depending on
-      // the index.
-      if (enabled) {
-        var prev_btn = $('#prev-btn');
-        var next_btn = $('#next-btn');
-        prev_btn.prop('disabled', true);
-        next_btn.prop('disabled', true);
-        if (idx > 0) {
-          prev_btn.prop('disabled', false);
-        }
-        if (idx < num_images - 1) next_btn.prop('disabled', false);
-      }
-
-      // Refresh the counter.
-      $('.counter-top').text(idx + 1);
-      $('.counter-bottom').text(num_images);
     }
 
     function storeCurrent() {
       // Storing the current points
       var out = {
-        "scene_token": input[idx]["frame_data"]["scene_token"],
+        "scene_token": input["frame_data"]["scene_token"],
         "command": {
           "commandText": document.getElementById("commandBox").value,
           "referredObjectIx": referredObjectIx,
@@ -1370,7 +1265,7 @@
       selected_frame = false
 
       if (document.getElementById("commandBox").value) { written_command = true }
-      if (referredObjectIx > -1) { selected_object = true }
+      if (referredObjectIx.length) { selected_object = true }
       if (selectedFrameToken) { selected_frame = true }
 
       if (selected_object) {
@@ -1394,41 +1289,29 @@
     function enableSubmit() {
       // Enable the submit button only if all the frames are annotated
       $('#submit-btn').prop('disabled', false);
-      if (createdAnnotationsOutputList.length < num_images) {
-        $('#submit-btn').prop('disabled', true);
-      } else {
-        for (var i = 0; i < num_images; i++) {
-          createdAnnotationsOutput = createdAnnotationsOutputList[i];
-          written_command = false
-          selected_object = false
-          selected_frame = false
-          any_checked_actions = false
-          any_checked_legality = false
+      for (var i = 0; i < createdAnnotationsOutputList.length; i++) {
+        createdAnnotationsOutput = createdAnnotationsOutputList[i];
+        written_command = false
+        selected_object = false
+        selected_frame = false
+        any_checked_actions = false
+        any_checked_legality = false
 
-          createdAnnotationsOutputCommand = createdAnnotationsOutput["command"];
-          if (createdAnnotationsOutputCommand["commandText"]) { written_command = true }
-          if (createdAnnotationsOutputCommand["referredObjectIx"] > -1) { selected_object = true }
-          if (createdAnnotationsOutputCommand["selectedFrameToken"] && (createdAnnotationsOutputCommand["selectedFrameIx"] > -1)) { selected_frame = true }
+        createdAnnotationsOutputCommand = createdAnnotationsOutput["command"];
+        if (createdAnnotationsOutputCommand["commandText"]) { written_command = true }
+        if (createdAnnotationsOutputCommand["referredObjectIx"].length) { selected_object = true }
+        if (createdAnnotationsOutputCommand["selectedFrameToken"] && (createdAnnotationsOutputCommand["selectedFrameIx"] > -1)) { selected_frame = true }
 
-          if ((written_command == false) || (selected_object == false) || (selected_frame == false)) {
-            $('#submit-btn').prop('disabled', true);
-          }
-
+        if ((written_command == false) || (selected_object == false) || (selected_frame == false)) {
+          $('#submit-btn').prop('disabled', true);
         }
+
       }
     }
 
     // Enable the UI.
     function enable_hit() {
       enabled = true;
-
-      // Enable components
-      $('#next-btn').click(function () {
-        set_idx(idx + 1);
-      });
-      $('#prev-btn').click(function () {
-        set_idx(idx - 1);
-      });
 
       // Set up submit handler.
       easyturk.setupSubmit();
