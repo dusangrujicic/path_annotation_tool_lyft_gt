@@ -5,3 +5,4 @@ test.py
 poetry.lock
 pyproject.toml
 annotation_tool/rendered_template.html
+condor/
