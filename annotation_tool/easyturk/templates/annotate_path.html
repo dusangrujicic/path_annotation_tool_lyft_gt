@@ -223,6 +223,9 @@
               <li>
                 <input type="text" id="task_command" value="Written command" style="font-weight:bold;" readonly>
               </li>
+              <li>
+                <input type="text" id="task_action" value="Selected action" style="font-weight:bold;" readonly>
+              </li>
             </ul>
           </div>
           <button id='store-frame-btn' tabindex="0" class='btn btn-lg btn-primary' disabled>Store Frame Data</button>
@@ -466,7 +469,19 @@
       selectedFrameToken = "";
       selectedFrameIx = -1;
       document.getElementById("commandBox").value = "";
+      document.getElementById("actionLeft").checked = false;
+      document.getElementById("actionRight").checked = false;
+      document.getElementById("actionChangeLaneLeft").checked = false;
+      document.getElementById("actionChangeLaneRight").checked = false;
+      document.getElementById("actionULeft").checked = false;
+      document.getElementById("actionURight").checked = false;
+      document.getElementById("actionPark").checked = false;
+      document.getElementById("actionStop").checked = false;
+      document.getElementById("actionFollow").checked = false;
+      document.getElementById("actionOther").checked = false;
+      document.getElementById("actionOtherText").value = "";
       updateCommandTable()
+
     });
 
 
@@ -1188,6 +1203,12 @@
     // main update function
     function update(timer) {
 
+      if (document.getElementById("actionOther").checked) {
+        document.getElementById("actionOtherText").style.display = '';
+      } else {
+        document.getElementById("actionOtherText").style.display = 'none';
+      }
+
       checkTasks()
       enableSubmit()
       enableStoreFrameData()
@@ -1298,9 +1319,21 @@
       referredObjectIx = [];
       selectedFrameToken = "";
       selectedFrameIx = -1;
-      document.getElementById("commandBox").value = "";
       object_points = createObjectPoints();
       lines = createLines();
+      document.getElementById("commandBox").value = "";
+      document.getElementById("actionLeft").checked = false;
+      document.getElementById("actionRight").checked = false;
+      document.getElementById("actionChangeLaneLeft").checked = false;
+      document.getElementById("actionChangeLaneRight").checked = false;
+      document.getElementById("actionULeft").checked = false;
+      document.getElementById("actionURight").checked = false;
+      document.getElementById("actionPark").checked = false;
+      document.getElementById("actionStop").checked = false;
+      document.getElementById("actionFollow").checked = false;
+      document.getElementById("actionOther").checked = false;
+      document.getElementById("actionOtherText").value = "";
+
       render();
     }
 
@@ -1312,6 +1345,19 @@
           "referredObjectIx": referredObjectIx,
           "selectedFrameToken": selectedFrameToken,
           "selectedFrameIx": Number(selectedFrameIx),
+        },
+        "actions": {
+          "actionLeft": document.getElementById("actionLeft").checked,
+          "actionRight": document.getElementById("actionRight").checked,
+          "actionChangeLaneLeft": document.getElementById("actionChangeLaneLeft").checked,
+          "actionChangeLaneRight": document.getElementById("actionChangeLaneRight").checked,
+          "actionULeft": document.getElementById("actionULeft").checked,
+          "actionURight": document.getElementById("actionURight").checked,
+          "actionPark": document.getElementById("actionPark").checked,
+          "actionStop": document.getElementById("actionStop").checked,
+          "actionFollow": document.getElementById("actionFollow").checked,
+          "actionOther": document.getElementById("actionOther").checked,
+          "actionOtherText": document.getElementById("actionOtherText").value,
         },
       }
       createdAnnotationsOutputList.push(out);
@@ -1352,6 +1398,19 @@
       selectedFrameToken = createdAnnotationsOutputList[Number(commandIndex)]["command"]["selectedFrameToken"];
       selectedFrameIx = createdAnnotationsOutputList[Number(commandIndex)]["command"]["selectedFrameIx"];
 
+      document.getElementById("commandBox").value = createdAnnotationsOutputList[Number(commandIndex)]["command"]["commandText"]
+      document.getElementById("actionLeft").checked = createdAnnotationsOutputList[Number(commandIndex)]["actions"]["actionLeft"];
+      document.getElementById("actionRight").checked = createdAnnotationsOutputList[Number(commandIndex)]["actions"]["actionRight"];
+      document.getElementById("actionChangeLaneLeft").checked = createdAnnotationsOutputList[Number(commandIndex)]["actions"]["actionChangeLaneLeft"];
+      document.getElementById("actionChangeLaneRight").checked = createdAnnotationsOutputList[Number(commandIndex)]["actions"]["actionChangeLaneRight"];
+      document.getElementById("actionULeft").checked = createdAnnotationsOutputList[Number(commandIndex)]["actions"]["actionULeft"];
+      document.getElementById("actionURight").checked = createdAnnotationsOutputList[Number(commandIndex)]["actions"]["actionURight"];
+      document.getElementById("actionPark").checked = createdAnnotationsOutputList[Number(commandIndex)]["actions"]["actionPark"];
+      document.getElementById("actionStop").checked = createdAnnotationsOutputList[Number(commandIndex)]["actions"]["actionStop"];
+      document.getElementById("actionFollow").checked = createdAnnotationsOutputList[Number(commandIndex)]["actions"]["actionFollow"];
+      document.getElementById("actionOther").checked = createdAnnotationsOutputList[Number(commandIndex)]["actions"]["actionOther"];
+      document.getElementById("actionOtherText").value = createdAnnotationsOutputList[Number(commandIndex)]["actions"]["actionOtherText"];
+
       $("#video-slider").val(selectedFrameIx);
       $("#frontal-view").attr('src', input['frontal'].replace(`_ix`, `_${selectedFrameIx}`));
       $("#top-down-view-hidden").attr('src', input['top-down'].replace(`_ix`, `_${selectedFrameIx}`));
@@ -1374,9 +1433,23 @@
     function checkTasks() {
       written_command = false
       selected_object = false
+      any_checked_actions = false
+
       if (document.getElementById("commandBox").value) { written_command = true }
       if (referredObjectIx.length) { selected_object = true }
       if (selectedFrameToken) { selected_frame = true }
+      if (document.getElementById("actionLeft").checked) { any_checked_actions = true }
+      if (document.getElementById("actionRight").checked) { any_checked_actions = true }
+      if (document.getElementById("actionChangeLaneLeft").checked) { any_checked_actions = true }
+      if (document.getElementById("actionChangeLaneRight").checked) { any_checked_actions = true }
+      if (document.getElementById("actionULeft").checked) { any_checked_actions = true }
+      if (document.getElementById("actionURight").checked) { any_checked_actions = true }
+      if (document.getElementById("actionPark").checked) { any_checked_actions = true }
+      if (document.getElementById("actionStop").checked) { any_checked_actions = true }
+      if (document.getElementById("actionFollow").checked) { any_checked_actions = true }
+      if (document.getElementById("actionOther").checked && document.getElementById("actionOtherText").value) { any_checked_actions = true }
+
+
       if (selected_object) {
         document.getElementById("task_object").style.backgroundColor = "#5ae406"
       } else {
@@ -1387,6 +1460,11 @@
       } else {
         document.getElementById("task_command").style.backgroundColor = "#f93005"
       }
+      if (any_checked_actions) {
+        document.getElementById("task_action").style.backgroundColor = "#5ae406"
+      } else {
+        document.getElementById("task_action").style.backgroundColor = "#f93005"
+      }
     }
 
     function enableStoreFrameData() {
@@ -1394,10 +1472,22 @@
 
       written_command = false
       selected_object = false
+      any_checked_actions = false
 
       if (document.getElementById("commandBox").value) { written_command = true }
       if (referredObjectIx.length) { selected_object = true }
-      if ((written_command == false) || (selected_object == false)) {
+      if (document.getElementById("actionLeft").checked) { any_checked_actions = true }
+      if (document.getElementById("actionRight").checked) { any_checked_actions = true }
+      if (document.getElementById("actionChangeLaneLeft").checked) { any_checked_actions = true }
+      if (document.getElementById("actionChangeLaneRight").checked) { any_checked_actions = true }
+      if (document.getElementById("actionULeft").checked) { any_checked_actions = true }
+      if (document.getElementById("actionURight").checked) { any_checked_actions = true }
+      if (document.getElementById("actionPark").checked) { any_checked_actions = true }
+      if (document.getElementById("actionStop").checked) { any_checked_actions = true }
+      if (document.getElementById("actionFollow").checked) { any_checked_actions = true }
+      if (document.getElementById("actionOther").checked && document.getElementById("actionOtherText").value) { any_checked_actions = true }
+
+      if ((written_command == false) || (selected_object == false) || (any_checked_actions == false)) {
         $('#store-frame-btn').prop('disabled', true);
       }
     }
@@ -1413,13 +1503,24 @@
           written_command = false
           selected_object = false
           any_checked_actions = false
-          any_checked_legality = false
 
           createdAnnotationsOutputCommand = createdAnnotationsOutput["command"];
           if (createdAnnotationsOutputCommand["commandText"]) { written_command = true }
           if (createdAnnotationsOutputCommand["referredObjectIx"].length) { selected_object = true }
 
-          if ((written_command == false) || (selected_object == false)) {
+          createdAnnotationsOutputActions = createdAnnotationsOutput["actions"];
+          if (createdAnnotationsOutputActions["actionLeft"]) { any_checked_actions = true }
+          if (createdAnnotationsOutputActions["actionRight"]) { any_checked_actions = true }
+          if (createdAnnotationsOutputActions["actionChangeLaneLeft"]) { any_checked_actions = true }
+          if (createdAnnotationsOutputActions["actionChangeLaneRight"]) { any_checked_actions = true }
+          if (createdAnnotationsOutputActions["actionULeft"]) { any_checked_actions = true }
+          if (createdAnnotationsOutputActions["actionURight"]) { any_checked_actions = true }
+          if (createdAnnotationsOutputActions["actionPark"]) { any_checked_actions = true }
+          if (createdAnnotationsOutputActions["actionStop"]) { any_checked_actions = true }
+          if (createdAnnotationsOutputActions["actionFollow"]) { any_checked_actions = true }
+          if (createdAnnotationsOutputActions["actionOther"] && createdAnnotationsOutputActions["actionOtherText"]) { any_checked_actions = true }
+
+          if ((written_command == false) || (selected_object == false) || (any_checked_actions == false)) {
             $('#submit-btn').prop('disabled', true);
           }
         }
