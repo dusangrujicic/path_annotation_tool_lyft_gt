@@ -91,6 +91,17 @@
     color: #777;
   }
 
+  td {
+    font-size: 10pt;
+  }
+
+  tbody {
+    display: block;
+    border: 2px solid rgb(9, 34, 252);
+    border-collapse: separate;
+    border-spacing: 4px;
+  }
+
   p {
     margin-bottom: 0em;
     margin-top: 0em;
@@ -151,19 +162,30 @@
       </div>
     </div>
 
-    <div class='my-legend'>
-      <div class='legend-title'>Tasks:</div>
-      <div class='legend-scale'>
-        <ul class='legend-labels'>
-          <li>
-            <input type="text" id="task_object" value="Selected object" style="font-weight:bold;" readonly>
-          </li>
-          <li>
-            <input type="text" id="task_command" value="Written command" style="font-weight:bold;" readonly>
-          </li>
-        </ul>
+    <div class='col-xs-4'>
+      <div class='my-legend'>
+        <div class='row'>
+          <div class='legend-title'>Tasks:</div>
+          <div class='legend-scale'>
+            <ul class='legend-labels'>
+              <li>
+                <input type="text" id="task_object" value="Selected object" style="font-weight:bold;" readonly>
+              </li>
+              <li>
+                <input type="text" id="task_command" value="Written command" style="font-weight:bold;" readonly>
+              </li>
+            </ul>
+          </div>
+          <button id='store-frame-btn' tabindex="0" class='btn btn-lg btn-primary' disabled>Store Frame Data</button>
+        </div>
       </div>
-      <button id='store-frame-btn' tabindex="0" class='btn btn-lg btn-primary' disabled>Store Frame Data</button>
+
+      <div class='my-legend'>
+        <div class='legend-title'>Commands:</div>
+        <table>
+          <tbody id="commands-table"></tbody>
+        </table>
+      </div>
     </div>
 
   </div>
@@ -402,7 +424,9 @@
       selectedFrameToken = "";
       selectedFrameIx = -1;
       document.getElementById("commandBox").value = "";
+      updateCommandTable()
     });
+
 
     function playVideo() {
       var currImg = Number($("#video-slider").val());
@@ -1254,6 +1278,48 @@
 
     function removeFrameData(index) {
       createdAnnotationsOutputList.splice(index, 1);
+    }
+
+    function updateCommandTable() {
+      var commandsTable = document.getElementById('commands-table');
+      commandsTable.innerHTML = "";
+
+      for (var i = 0; i < createdAnnotationsOutputList.length; i++) {
+        createdAnnotationsOutput = createdAnnotationsOutputList[i];
+        commandLine = document.createElement("p");
+        var tr = "<tr>";
+
+        /* Must not forget the $ sign */
+        tr += "<td> Command " + i + "</td>";
+
+        tr += "</tr>"
+
+        /* We add the table row to the table body */
+        commandLine.innerHTML = tr;
+        commandLine.name = i;
+        commandLine.addEventListener('click', function () {
+          document.getElementById("commandBox").value = createdAnnotationsOutputList[Number(this.name)]["command"]["commandText"];
+          referredObjectIx = createdAnnotationsOutputList[Number(this.name)]["command"]["referredObjectIx"];
+          selectedFrameToken = createdAnnotationsOutputList[Number(this.name)]["command"]["selectedFrameToken"];
+          selectedFrameIx = createdAnnotationsOutputList[Number(this.name)]["command"]["selectedFrameIx"];
+          frameIx = selectedFrameIx;
+
+          $("#video-slider").val(frameIx);
+          $("#frontal-view").attr('src', input['frontal'].replace(`_ix`, `_${frameIx}`));
+          $("#top-down-view-hidden").attr('src', input['top-down'].replace(`_ix`, `_${frameIx}`));
+          var image = new Image();
+          image.onload = function () {
+            drawImage(image);
+          }
+          image.src = input['top-down'].replace(`_ix`, `_${frameIx}`);
+
+          var dataUrl = input['frame_data_url'].replace(`_ix`, `_${frameIx}`);
+          $.getJSON(dataUrl, function (data) {
+            input["frame_data"] = data
+          })
+        }, false);
+        commandsTable.appendChild(commandLine)
+      }
     }
 
     function checkTasks() {
