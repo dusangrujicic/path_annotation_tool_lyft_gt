@@ -89,7 +89,7 @@ if __name__ == "__main__":
             sample_rec = lyft.get("sample", sample_rec["next"])
             sample_tokens.append(sample_token)
 
-        if not os.path.exists(os.path.join(save_dir, sample_token)):
+        if not os.path.exists(os.path.join(save_dir, scene_token)):
             os.makedirs(os.path.join(save_dir, scene_token))
 
         for i, sample_token in enumerate(sample_tokens):
