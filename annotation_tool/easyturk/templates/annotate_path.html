@@ -141,7 +141,7 @@
       <div><input type="text" id="commandBox" name="commandBox" placeholder="Type command..." style='width:100%;'
           cols="40" />
       </div>
-      <div id=' instructions'
+      <div id='instructions'
         style="font-size:10; font-style:normal; background-color: #ebb5c5; border: 1px solid #f12b2b; width:100%;">
         <br />
         <p style="color: #2e6c80; font-size:12;"><b>
@@ -159,6 +159,55 @@
             Write the command related to the object of interest below <b>camera view (left)</b>. &nbsp;
           </li>
         </ul>
+      </div>
+
+      <div class='legend-title'><b>Actions:</b></div>
+      <div class='col-xs-4'>
+        <div>
+          <input id="actionLeft" type="checkbox" name="actionLeft" />
+          <label for="actionLeft" style="font-size:10;">Turn Left</label>
+        </div>
+        <div>
+          <input id="actionRight" type="checkbox" name="actionRight" />
+          <label for="actionRight" style="font-size:10;">Turn Right</label>
+        </div>
+        <div>
+          <input id="actionChangeLaneLeft" type="checkbox" name="actionChangeLaneLeft" />
+          <label for="actionChangeLaneLeft" style="font-size:10;">Change Lane Left</label>
+        </div>
+        <div>
+          <input id="actionChangeLaneRight" type="checkbox" name="actionChangeLaneRight" />
+          <label for="actionChangeLaneRight" style="font-size:10;">Change Lane Right</label>
+        </div>
+      </div>
+      <div class='col-xs-4'>
+        <div>
+          <input id="actionULeft" type="checkbox" name="actionULeft" />
+          <label for="actionULeft" style="font-size:10;">U-Turn Left</label>
+        </div>
+        <div>
+          <input id="actionURight" type="checkbox" name="actionURight" />
+          <label for="actionURight" style="font-size:10;">U-Turn Right</label>
+        </div>
+        <div>
+          <input id="actionPark" type="checkbox" name="actionPark" />
+          <label for="actionPark" style="font-size:10;">Park</label>
+        </div>
+        <div>
+          <input id="actionStop" type="checkbox" name="actionStop" />
+          <label for="actionStop" style="font-size:10;">Stop</label>
+        </div>
+      </div>
+      <div class='col-xs-4'>
+        <div>
+          <input id="actionFollow" type="checkbox" name="actionFollow" />
+          <label for="actionFollow" style="font-size:10;">Follow</label>
+        </div>
+        <div>
+          <input id="actionOther" type="checkbox" name="actionOther" />
+          <label for="actionOther" style="font-size:10;">Other</label>
+          <input type="text" id="actionOtherText" name="actionOtherText" placeholder="Which other..." />
+        </div>
       </div>
     </div>
 
