@@ -181,10 +181,12 @@
       </div>
 
       <div class='my-legend'>
-        <div class='legend-title'>Commands:</div>
-        <table>
-          <tbody id="commands-table"></tbody>
-        </table>
+        <div class='row'>
+          <div class='legend-title'>Generated Commands:</div>
+          <table>
+            <tbody id="commands-table"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -315,16 +317,7 @@
       }
       imageFrontal.src = input['frontal'].replace(`_ix`, `_${frameIx}`);
 
-      frame_token = input["frame_data"]["sample_token"]
-      egopose_translation = math.matrix([input["frame_data"]["ego_translation"]])
-      egopose_rotmat = math.matrix(input["frame_data"]["ego_rotation"])
-      cam_translation = math.matrix([input["frame_data"]["cam_translation"]])
-      cam_rotmat = math.matrix(input["frame_data"]["cam_rotation"]);
-      cam_intrinsics = math.matrix(input["frame_data"]["cam_intrinsic"]);
-      map_patch = math.matrix(input["frame_data"]["map_patch"]);
-      subsequent_egocenters = input["frame_data"]["subsequent_egocenters"]
-
-      first_run = true;
+      loadFrameData()
     }
 
     hRatio = null;
@@ -361,7 +354,7 @@
       canvasTopDownCh = canvasTopDownH / 2;
     }
 
-    function refreshGlobals() {
+    function loadFrameData() {
       // Update data
       frame_token = input["frame_data"]["sample_token"]
       egopose_translation = math.matrix([input["frame_data"]["ego_translation"]])
@@ -377,15 +370,15 @@
       first_run = true;
       canvasTopDown = undefined;
       path_points = createPath();
-      referredObjectIx = [];
-      selectedFrameToken = "";
-      selectedFrameIx = -1;
-
-      // Uncheck boxes
-      document.getElementById("commandBox").value = "";
 
       object_points = createObjectPoints();
       lines = createLines();
+    }
+
+    function refreshAnnos() {
+      referredObjectIx = [];
+      selectedFrameToken = "";
+      selectedFrameIx = -1;
     }
 
     $(document).on('change', "#video-slider", function (e) {
@@ -403,8 +396,8 @@
       $.getJSON(dataUrl, function (data) {
         input["frame_data"] = data
       })
-      refreshGlobals();
-
+      loadFrameData();
+      refreshAnnos();
     })
 
     $(document).on('click', ".play-button", function (e) {
@@ -1224,7 +1217,6 @@
       path_points.draw();
       topDownCtx.stroke();
 
-      // drawPathOnTopDownView()
       drawCarStartPoint()
       drawObjectsTopDown(closestObjectIx);
 
@@ -1270,7 +1262,7 @@
           "commandText": document.getElementById("commandBox").value,
           "referredObjectIx": referredObjectIx,
           "selectedFrameToken": selectedFrameToken,
-          "selectedFrameIx": selectedFrameIx,
+          "selectedFrameIx": Number(selectedFrameIx),
         },
       }
       createdAnnotationsOutputList.push(out);
@@ -1288,38 +1280,46 @@
         createdAnnotationsOutput = createdAnnotationsOutputList[i];
         commandLine = document.createElement("p");
         var tr = "<tr>";
-
-        /* Must not forget the $ sign */
-        tr += "<td> Command " + i + "</td>";
-
+        tr += "<td> Command " + (i + 1) + " @ Frame " + (createdAnnotationsOutput["command"]["selectedFrameIx"]) + "</td>";
+        tr += "<td><span style=\"color: blue\"> Load Back </span></td>";
         tr += "</tr>"
 
         /* We add the table row to the table body */
         commandLine.innerHTML = tr;
         commandLine.name = i;
         commandLine.addEventListener('click', function () {
-          document.getElementById("commandBox").value = createdAnnotationsOutputList[Number(this.name)]["command"]["commandText"];
-          referredObjectIx = createdAnnotationsOutputList[Number(this.name)]["command"]["referredObjectIx"];
-          selectedFrameToken = createdAnnotationsOutputList[Number(this.name)]["command"]["selectedFrameToken"];
-          selectedFrameIx = createdAnnotationsOutputList[Number(this.name)]["command"]["selectedFrameIx"];
-          frameIx = selectedFrameIx;
-
-          $("#video-slider").val(frameIx);
-          $("#frontal-view").attr('src', input['frontal'].replace(`_ix`, `_${frameIx}`));
-          $("#top-down-view-hidden").attr('src', input['top-down'].replace(`_ix`, `_${frameIx}`));
-          var image = new Image();
-          image.onload = function () {
-            drawImage(image);
-          }
-          image.src = input['top-down'].replace(`_ix`, `_${frameIx}`);
-
-          var dataUrl = input['frame_data_url'].replace(`_ix`, `_${frameIx}`);
-          $.getJSON(dataUrl, function (data) {
-            input["frame_data"] = data
-          })
-        }, false);
+          loadBackCommand(this.name)
+        }, true);
+        commandLine.addEventListener('mouseover', function () {
+          this.style.cursor = "pointer"
+        }, true);
         commandsTable.appendChild(commandLine)
       }
+    }
+
+    function loadBackCommand(commandIndex) {
+      document.getElementById("commandBox").value = createdAnnotationsOutputList[Number(commandIndex)]["command"]["commandText"];
+      referredObjectIx = createdAnnotationsOutputList[Number(commandIndex)]["command"]["referredObjectIx"];
+      selectedFrameToken = createdAnnotationsOutputList[Number(commandIndex)]["command"]["selectedFrameToken"];
+      selectedFrameIx = createdAnnotationsOutputList[Number(commandIndex)]["command"]["selectedFrameIx"];
+
+      $("#video-slider").val(selectedFrameIx);
+      $("#frontal-view").attr('src', input['frontal'].replace(`_ix`, `_${selectedFrameIx}`));
+      $("#top-down-view-hidden").attr('src', input['top-down'].replace(`_ix`, `_${selectedFrameIx}`));
+      var image = new Image();
+      image.onload = function () {
+        drawImage(image);
+      }
+      image.src = input['top-down'].replace(`_ix`, `_${selectedFrameIx}`);
+
+      var dataUrl = input['frame_data_url'].replace(`_ix`, `_${selectedFrameIx}`);
+      $.getJSON(dataUrl, function (data) {
+        input["frame_data"] = data
+      })
+
+      loadFrameData()
+      removeFrameData(commandIndex)
+      updateCommandTable()
     }
 
     function checkTasks() {
