@@ -65,8 +65,8 @@ if __name__ == "__main__":
 
     scene_recs = lyft.scene
 
-    first_ind = 0 if args.first_ind > -1 else args.first_ind
-    last_ind = len(scene_recs) if args.last_ind > -1 else args.last_ind
+    first_ind = args.first_ind if args.first_ind > -1 else 0
+    last_ind = args.last_ind if args.last_ind > -1 else len(scene_recs)
     print(f"Extracting from scene {first_ind} to scene {last_ind}...")
     for scene_rec in scene_recs[first_ind:last_ind]:
         scene_token = scene_rec["token"]
