@@ -136,14 +136,6 @@ if __name__ == "__main__":
                 subsequent_egocenters.append(subsequent_egocenter)
                 subsequent_egoboxes.append(subsequent_egobox)
 
-            anchor_egocenter = subsequent_egocenters[0]
-            filtered_subsequent_egocenter = []
-            filtered_subsequent_egoboxes = []
-            for subsequent_egocenter, subsequent_egobox in zip(
-                subsequent_egocenters, subsequent_egoboxes
-            ):
-                anchor_egocenter = np.array(subsequent_egocenter)
-
             (
                 image_objects_bbox,
                 camera_intrinsic,
