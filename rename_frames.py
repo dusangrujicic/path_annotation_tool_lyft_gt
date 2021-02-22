@@ -66,17 +66,13 @@ if __name__ == "__main__":
             frontal_orig_path = (
                 os.path.join(save_dir, scene_token, f"{sample_token}.jpg"),
             )
-            top_down_orig_path = (
-                os.path.join(save_dir, scene_token, f"{sample_token}.png"),
+            top_down_orig_path = os.path.join(
+                save_dir, scene_token, f"{sample_token}.png"
             )
             data_orig_path = os.path.join(save_dir, scene_token, f"{sample_token}.json")
 
-            frontal_new_path = (
-                os.path.join(save_dir, scene_token, f"frontal_{i}.jpg"),
-            )
-            top_down_new_path = (
-                os.path.join(save_dir, scene_token, f"top_down_{i}.png"),
-            )
+            frontal_new_path = os.path.join(save_dir, scene_token, f"frontal_{i}.jpg")
+            top_down_new_path = os.path.join(save_dir, scene_token, f"top_down_{i}.png")
             data_new_path = os.path.join(save_dir, scene_token, f"frame_{i}_data.json")
 
             shutil.move(frontal_orig_path, frontal_new_path)
