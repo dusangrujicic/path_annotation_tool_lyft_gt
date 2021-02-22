@@ -63,8 +63,8 @@ if __name__ == "__main__":
             os.makedirs(os.path.join(save_dir, scene_token))
 
         for i, sample_token in tqdm(enumerate(sample_tokens)):
-            frontal_orig_path = (
-                os.path.join(save_dir, scene_token, f"{sample_token}.jpg"),
+            frontal_orig_path = os.path.join(
+                save_dir, scene_token, f"{sample_token}.jpg"
             )
             top_down_orig_path = os.path.join(
                 save_dir, scene_token, f"{sample_token}.png"
