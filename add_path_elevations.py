@@ -113,8 +113,8 @@ if __name__ == "__main__":
             current_egopose = lyft.get("ego_pose", sample_data_lidar["ego_pose_token"])
 
             subsequent_egocenters = []
-            subsequent_egocenters_elevations = []
             subsequent_egoboxes = []
+            subsequent_egocenters_elevations = []
             for subsequent_egopose in subsequent_egoposes:
                 subsequent_egobox = Box(
                     center=subsequent_egopose["translation"],
@@ -131,92 +131,23 @@ if __name__ == "__main__":
                     ).inverse
                 )
                 subsequent_egocenter = subsequent_egobox.center[:2].tolist()
-                subsequent_egocenter_elevation = subsequent_egobox.append(
-                    subsequent_egocenter.bottom_corners().mean(axis=1)[2]
-                )
                 subsequent_egobox = (
                     subsequent_egobox.bottom_corners()[:2, :].transpose().tolist()
                 )
+                subsequent_egocenter_elevation = subsequent_egobox.append(
+                    subsequent_egocenter.bottom_corners().mean(axis=1)[2]
+                )
                 subsequent_egocenters.append(subsequent_egocenter)
-                subsequent_egocenters_elevations.append(subsequent_egocenter_elevation)
                 subsequent_egoboxes.append(subsequent_egobox)
 
-            (
-                image_objects_bbox,
-                camera_intrinsic,
-                camera_translation,
-                camera_rotation,
-            ) = lyft.explorer.render_sample_camera_data_custom(
-                sample_data_token=sample_data_camera["token"],
-                out_path=os.path.join(save_dir, scene_token, f"{sample_token}.jpg"),
-                with_annotations=False,
+            out_dict = json.load(
+                open(os.path.join(save_dir, scene_token, f"frame_{i}_data.json"), "r")
             )
-
-            (
-                ego_bbox,
-                ego_translation,
-                ego_rotation,
-                map_objects_center,
-                map_objects_elevation,
-                map_objects_bbox,
-                objects_type,
-                objects_token,
-                map_patch,
-            ) = lyft.explorer.render_sample_lidar_data_custom(
-                sample_data_token=sample_data_lidar["token"],
-                out_path=os.path.join(save_dir, scene_token, f"{sample_token}.png"),
-                with_annotations=False,
-            )
-
-            # Remove objects not visible in camera view
-            map_objects_center = [
-                item
-                for i, item in enumerate(map_objects_center)
-                if image_objects_bbox[i] != None
-            ]
-            map_objects_elevation = [
-                item
-                for i, item in enumerate(map_objects_elevation)
-                if image_objects_bbox[i] != None
-            ]
-            map_objects_bbox = [
-                item
-                for i, item in enumerate(map_objects_bbox)
-                if image_objects_bbox[i] != None
-            ]
-            objects_type = [
-                item
-                for i, item in enumerate(objects_type)
-                if image_objects_bbox[i] != None
-            ]
-            objects_token = [
-                item
-                for i, item in enumerate(objects_token)
-                if image_objects_bbox[i] != None
-            ]
-            image_objects_bbox = [item for item in image_objects_bbox if item != None]
-
-            out_dict = {
-                "scene_token": scene_token,
-                "sample_token": sample_token,
-                "map_patch": map_patch,
-                "egobbox": ego_bbox,
-                "map_objects_center": map_objects_center,
-                "map_objects_elevation": map_objects_elevation,
-                "map_objects_bbox": map_objects_bbox,
-                "image_objects_bbox": image_objects_bbox,
-                "objects_token": objects_token,
-                "objects_type": objects_type,
-                "cam_intrinsic": camera_intrinsic,
-                "ego_translation": ego_translation,
-                "ego_rotation": ego_rotation,
-                "cam_translation": camera_translation,
-                "cam_rotation": camera_rotation,
-                "subsequent_egocenters": subsequent_egocenters,
-                "subsequent_egocenters_elevations": subsequent_egocenters_elevations,
-            }
+            out_dict[
+                "subsequent_egocenters_elevations"
+            ] = subsequent_egocenters_elevations
 
             with open(
-                os.path.join(save_dir, scene_token, f"{sample_token}.json"), "w"
+                os.path.join(save_dir, scene_token, f"frame_{i}_data.json"), "w"
             ) as f:
                 json.dump(out_dict, f)
