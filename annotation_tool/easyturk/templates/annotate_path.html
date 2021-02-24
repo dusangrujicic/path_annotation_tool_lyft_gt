@@ -253,10 +253,10 @@
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // var DEFAULT_INPUT = {
-    //   "frontal": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/trial/da4ed9e02f64c544f4f1f10c6738216dcb0e6b0d50952e158e5589854af9f100/frontal_ix.jpg",
-    //   "top-down": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/trial/da4ed9e02f64c544f4f1f10c6738216dcb0e6b0d50952e158e5589854af9f100/top_down_ix.png",
-    //   "frame_data_url": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/trial/da4ed9e02f64c544f4f1f10c6738216dcb0e6b0d50952e158e5589854af9f100/frame_ix_data.json",
-    //   "video_data": { "max_frame_ind": 99 },
+    //   "frontal": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/train/da4ed9e02f64c544f4f1f10c6738216dcb0e6b0d50952e158e5589854af9f100/frontal_ix.jpg",
+    //   "top-down": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/train/da4ed9e02f64c544f4f1f10c6738216dcb0e6b0d50952e158e5589854af9f100/top_down_ix.png",
+    //   "frame_data_url": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/train/da4ed9e02f64c544f4f1f10c6738216dcb0e6b0d50952e158e5589854af9f100/frame_ix_data.json",
+    //   "video_data": { "max_frame_ind": 125 },
     // };
 
     var DEFAULT_INPUT = {
@@ -265,6 +265,13 @@
       "top-down": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/train/127c57c023bad0a3d59f2e00d4d728d788fc26d8a0df474859ad070babf279f7/top_down_ix.png",
       "frame_data_url": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/train/127c57c023bad0a3d59f2e00d4d728d788fc26d8a0df474859ad070babf279f7/frame_ix_data.json"
     }
+
+    // var DEFAULT_INPUT = {
+    //   "video_data": { "max_frame_ind": 125 },
+    //   "frontal": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/val/156ab3299e230db57bea268117917ee297ec7fdecae8d646c760f870f35af4e8/frontal_ix.jpg",
+    //   "top-down": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/val/156ab3299e230db57bea268117917ee297ec7fdecae8d646c760f870f35af4e8/top_down_ix.png",
+    //   "frame_data_url": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/val/156ab3299e230db57bea268117917ee297ec7fdecae8d646c760f870f35af4e8/frame_ix_data.json"
+    // }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -411,6 +418,7 @@
       first_run = true;
       canvasTopDown = undefined;
       path_points = createPath();
+      path_points_elevations = [];
 
       object_points = createObjectPoints();
       lines = createLines();
@@ -758,6 +766,73 @@
       return maxValue;
     }
 
+    function projectPathToFrontalView() {
+      // 1) Add 0 to third dimension
+      if (path_points.items.length < 2) {
+        return;
+      }
+
+      // 1) Create polygons in 2D and append z-axis
+      // Scale path points to map coordinates
+      var points_map = math.matrix(path_points.projectPointsToMap());
+
+      // Convert path points to polygon side points
+      points_map = math.matrix(computePolygonSides(points_map._data, 1))
+
+      // Scale object points to map coordinates
+      path_polygon_left = [...path_points_elevations]
+      path_polygon_right = [...path_points_elevations].reverse();
+      points_map_elevations = math.matrix(path_polygon_left.concat(path_polygon_right))
+
+      points_map_elevations = points_map_elevations.resize([points_map_elevations.size()[0], 1])
+      // // Append nearest object points
+      points_map = math.concat(points_map, points_map_elevations, 1)
+
+      // 2) Subtract egopose translation
+      for (var i = 0; i < points_map.size()[0]; i++) {
+        new_point = math.subtract(math.subset(points_map, math.index(i, math.range(0, points_map.size()[1]))), egopose_translation)
+        points_map.subset(math.index(i, math.range(0, points_map.size()[1])), new_point)
+      }
+      points_map = math.transpose(points_map)
+
+      // 3) Rotate by egopose rotation matrix
+      points_map = math.multiply(math.transpose(egopose_rotmat), points_map)
+      points_map = math.transpose(points_map)
+
+      // 4) Subtract camera translation
+      for (var i = 0; i < points_map.size()[0]; i++) {
+        new_point = math.subtract(math.subset(points_map, math.index(i, math.range(0, points_map.size()[1]))), cam_translation)
+        points_map.subset(math.index(i, math.range(0, points_map.size()[1])), new_point)
+      }
+      points_map = math.transpose(points_map)
+
+      // 5) Rotate by camera rotation matrix
+      points_map = math.multiply(math.transpose(cam_rotmat), points_map)
+      points_map = math.transpose(points_map)
+
+      // 6) Map to image view
+      var viewpad = math.matrix(cam_intrinsics)
+      viewpad = math.concat(viewpad, math.zeros(viewpad.size()[0], 1), 1)
+      viewpad = math.concat(viewpad, math.zeros(1, viewpad.size()[1]), 0)
+      viewpad.subset(math.index(3, 3), 1)
+      points_frontal = math.transpose(points_map)
+      points_frontal = math.concat(points_frontal, math.ones(1, points_frontal.size()[1]), 0)
+      points_frontal = math.multiply(viewpad, points_frontal)
+      points_frontal = math.subset(points_frontal, math.index(math.range(0, 3), math.range(0, points_frontal.size()[1])))
+      norm = math.subset(points_frontal, math.index(2, math.range(0, points_frontal.size()[1])))
+      norm = math.concat(norm, norm, norm, 0)
+      points_frontal = math.dotDivide(points_frontal, norm)
+      points_frontal = math.subset(points_frontal, math.index(math.range(0, 2), math.range(0, points_frontal.size()[1])))
+      points_frontal = math.transpose(points_frontal)
+      // Finally transform to the canvas
+      points_frontal_x = math.multiply(math.subset(points_frontal, math.index(math.range(0, points_frontal.size()[0]), 0)), frontalViewRatioW);
+      points_frontal_y = math.multiply(math.subset(points_frontal, math.index(math.range(0, points_frontal.size()[0]), 1)), frontalViewRatioH);
+
+      points_frontal = math.concat(points_frontal_x, points_frontal_y, 1);
+
+      return points_frontal;
+    }
+
     function projectElevatedPathToFrontalView() {
       // 1) Add 0 to third dimension
       if (path_points.items.length < 2) {
@@ -852,7 +927,7 @@
         context = canvasFrontal.getContext('2d');
         context.clearRect(0, 0, canvasFrontal.width, canvasFrontal.height);
       }
-      var projectedPoints = projectElevatedPathToFrontalView();
+      var projectedPoints = projectPathToFrontalView();
       if (projectedPoints === undefined) return
       var context = canvasFrontal.getContext('2d');
       context.strokeStyle = "rgba(50,205,50,0.75)";
@@ -1091,6 +1166,7 @@
         drawPathOnTopDownView: drawPathOnTopDownView
       });
     }
+    var path_points_elevations;
 
     var lines;
     function createLines() {
@@ -1213,6 +1289,7 @@
         map_patch = math.matrix(input["frame_data"]["map_patch"])
         egopose = input["frame_data"]["ego_translation"]
         subsequent_egocenters = input["frame_data"]["subsequent_egocenters"]
+        subsequent_egocenters_elevations = input["frame_data"]["subsequent_egocenters_elevations"]
 
         for (i = 0; i < object_centers.length; i++) {
           object_center = object_centers[i]
@@ -1225,6 +1302,7 @@
         //Filter all points that are too near
         for (i = 0; i < subsequent_egocenters.length; i++) {
           path_point = subsequent_egocenters[i]
+          path_point_elevation = subsequent_egocenters_elevations[i]
           anchor_dist = Math.sqrt(
             Math.pow((car_anchor[0] - path_point[0]), 2) +
             Math.pow((car_anchor[1] - path_point[1]), 2)
@@ -1232,6 +1310,7 @@
           if (anchor_dist > 2.0) {
             path_point = getMapToCanvas(path_point, map_patch)
             path_points.add(Point2(path_point[0], path_point[1]))
+            path_points_elevations.push(path_point_elevation)
           }
         }
         first_run = false
@@ -1295,6 +1374,7 @@
       first_run = true;
       canvasTopDown = undefined;
       path_points = createPath();
+      path_points_elevations = [];
       referredObjectIx = [];
       selectedFrameToken = "";
       selectedFrameIx = -1;
