@@ -67,10 +67,10 @@ if __name__ == "__main__":
 
     first_ind = args.first_ind if args.first_ind > -1 else 0
     last_ind = args.last_ind if args.last_ind > -1 else len(scene_recs)
-    print(f"Extracting from scene {first_ind} to scene {last_ind}...")
+    print(f"Adding elevations from scene {first_ind} to scene {last_ind}...")
     for scene_rec in scene_recs[first_ind:last_ind]:
         scene_token = scene_rec["token"]
-        print(f"\tExtracting scene {scene_token}")
+        print(f"\Adding elevation in scene {scene_token}")
         log_token = scene_rec["log_token"]
         name = scene_rec["name"]
         nbr_samples = scene_rec["nbr_samples"]
@@ -131,13 +131,15 @@ if __name__ == "__main__":
                     ).inverse
                 )
                 subsequent_egocenter = subsequent_egobox.center[:2].tolist()
+                subsequent_egocenter_elevation = (
+                    subsequent_egobox.bottom_corners().mean(axis=1)[2]
+                )
                 subsequent_egobox = (
                     subsequent_egobox.bottom_corners()[:2, :].transpose().tolist()
                 )
-                subsequent_egocenter_elevation = subsequent_egobox.append(
-                    subsequent_egocenter.bottom_corners().mean(axis=1)[2]
-                )
+
                 subsequent_egocenters.append(subsequent_egocenter)
+                subsequent_egocenters_elevations.append(subsequent_egocenter_elevation)
                 subsequent_egoboxes.append(subsequent_egobox)
 
             out_dict = json.load(
