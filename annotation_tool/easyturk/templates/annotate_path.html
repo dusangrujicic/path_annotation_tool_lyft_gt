@@ -261,9 +261,9 @@
 
     var DEFAULT_INPUT = {
       "video_data": { "max_frame_ind": 125 },
-      "frontal": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/train/5f158f2069f5d61b9632659e565b7a1402386d7fa0b44776a9b3944480b48e96/frontal_ix.jpg",
-      "top-down": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/train/5f158f2069f5d61b9632659e565b7a1402386d7fa0b44776a9b3944480b48e96/top_down_ix.png",
-      "frame_data_url": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/train/5f158f2069f5d61b9632659e565b7a1402386d7fa0b44776a9b3944480b48e96/frame_ix_data.json"
+      "frontal": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/train/127c57c023bad0a3d59f2e00d4d728d788fc26d8a0df474859ad070babf279f7/frontal_ix.jpg",
+      "top-down": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/train/127c57c023bad0a3d59f2e00d4d728d788fc26d8a0df474859ad070babf279f7/top_down_ix.png",
+      "frame_data_url": "https://lyft-extracted.s3.eu-west-3.amazonaws.com/train/127c57c023bad0a3d59f2e00d4d728d788fc26d8a0df474859ad070babf279f7/frame_ix_data.json"
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -353,8 +353,8 @@
         canvasFrontal = document.getElementById('frontal-view-canvas');
         canvasFrontal.width = $("#frontal-view").width();
         canvasFrontal.height = $("#frontal-view").height();
-        frontalViewRatioW = (canvasFrontal.width / 1224);
-        frontalViewRatioH = (canvasFrontal.height / 1024);
+        frontalViewRatioW = (canvasFrontal.width / $("#frontal-view")[0].naturalWidth);
+        frontalViewRatioH = (canvasFrontal.height / $("#frontal-view")[0].naturalHeight);
       }
       imageFrontal.src = input['frontal'].replace(`_ix`, `_${frameIx}`);
 
@@ -523,8 +523,8 @@
       context.lineWidth = 2;
       context.strokeStyle = color;
       context.beginPath();
-      context.moveTo(start[0] / 1224 * canvasFrontal.width, (start[1] / 1024) * canvasFrontal.height);
-      context.lineTo(end[0] / 1224 * canvasFrontal.width, (end[1] / 1024) * canvasFrontal.height);
+      context.moveTo(start[0] / $("#frontal-view")[0].naturalWidth * canvasFrontal.width, (start[1] / $("#frontal-view")[0].naturalHeight) * canvasFrontal.height);
+      context.lineTo(end[0] / $("#frontal-view")[0].naturalWidth * canvasFrontal.width, (end[1] / $("#frontal-view")[0].naturalHeight) * canvasFrontal.height);
       context.stroke();
     }
 
@@ -572,61 +572,64 @@
     function drawObjectsTopDown(special_index = -1) {
       var objectsToDraw = math.matrix(input["frame_data"]["map_objects_bbox"]);
 
-      // Step 1: Convert points to canvas coords
+      if (objectsToDraw.size()[0]) {
 
-      var map_patch_corner_x = map_patch.subset(math.index(0))
-      var map_patch_corner_y = map_patch.subset(math.index(1))
-      var map_patch_width = map_patch.subset(math.index(2)) - map_patch.subset(math.index(0))
-      var map_patch_height = map_patch.subset(math.index(3)) - map_patch.subset(math.index(1))
+        // Step 1: Convert points to canvas coords
 
-      var canvasTopDown_width = canvasTopDown.width;
-      var canvasTopDown_height = canvasTopDown.height;
+        var map_patch_corner_x = map_patch.subset(math.index(0))
+        var map_patch_corner_y = map_patch.subset(math.index(1))
+        var map_patch_width = map_patch.subset(math.index(2)) - map_patch.subset(math.index(0))
+        var map_patch_height = map_patch.subset(math.index(3)) - map_patch.subset(math.index(1))
 
-      var x = objectsToDraw.subset(math.index(math.range(0, objectsToDraw.size()[0]), math.range(0, objectsToDraw.size()[1]), 0));
-      var y = objectsToDraw.subset(math.index(math.range(0, objectsToDraw.size()[0]), math.range(0, objectsToDraw.size()[1]), 1));
-      var converted_x = math.multiply(math.divide(math.subtract(x, map_patch_corner_x), (map_patch_width)), canvasTopDown_width);
-      var converted_y = math.multiply(math.subtract(1, math.divide(math.subtract(y, map_patch_corner_y), (map_patch_height))), canvasTopDown_height);
-      var convertedPoints = math.concat(converted_x, converted_y, 2);
+        var canvasTopDown_width = canvasTopDown.width;
+        var canvasTopDown_height = canvasTopDown.height;
 
-      // Step 2: Draw points on canvas
+        var x = objectsToDraw.subset(math.index(math.range(0, objectsToDraw.size()[0]), math.range(0, objectsToDraw.size()[1]), 0));
+        var y = objectsToDraw.subset(math.index(math.range(0, objectsToDraw.size()[0]), math.range(0, objectsToDraw.size()[1]), 1));
+        var converted_x = math.multiply(math.divide(math.subtract(x, map_patch_corner_x), (map_patch_width)), canvasTopDown_width);
+        var converted_y = math.multiply(math.subtract(1, math.divide(math.subtract(y, map_patch_corner_y), (map_patch_height))), canvasTopDown_height);
+        var convertedPoints = math.concat(converted_x, converted_y, 2);
 
-      var context = canvasTopDown.getContext('2d');
-      context.lineWidth = 3;
+        // Step 2: Draw points on canvas
 
-      if (convertedPoints.size()[1] == 4) {
-        convertedPoints = math.concat(
-          convertedPoints,
-          convertedPoints.subset(
-            math.index(
-              math.range(0, convertedPoints.size()[0]),
-              0,
-              math.range(0, convertedPoints.size()[2]))
-          ),
-          1
-        )
-      }
+        var context = canvasTopDown.getContext('2d');
+        context.lineWidth = 3;
 
-      for (var i = 0; i < convertedPoints.size()[0]; i++) {
-        if (referredObjectIx.includes(i)) {
-          context.strokeStyle = "rgba(255,226,0,1)";
-        } else if (i == special_index) {
-          context.strokeStyle = "rgba(205,50,50,1)";
-        } else {
-          context.strokeStyle = "rgba(47,79,79,1)";
-        }
-        context.beginPath();
-        // If not closed, close it
-        for (var j = 0; j < convertedPoints.size()[1] - 1; j++) {
-          context.moveTo(
-            math.subset(convertedPoints, math.index(i, j, 0)),
-            math.subset(convertedPoints, math.index(i, j, 1))
-          );
-          context.lineTo(
-            math.subset(convertedPoints, math.index(i, j + 1, 0)),
-            math.subset(convertedPoints, math.index(i, j + 1, 1))
+        if (convertedPoints.size()[1] == 4) {
+          convertedPoints = math.concat(
+            convertedPoints,
+            convertedPoints.subset(
+              math.index(
+                math.range(0, convertedPoints.size()[0]),
+                0,
+                math.range(0, convertedPoints.size()[2]))
+            ),
+            1
           )
         }
-        context.stroke();
+
+        for (var i = 0; i < convertedPoints.size()[0]; i++) {
+          if (referredObjectIx.includes(i)) {
+            context.strokeStyle = "rgba(255,226,0,1)";
+          } else if (i == special_index) {
+            context.strokeStyle = "rgba(205,50,50,1)";
+          } else {
+            context.strokeStyle = "rgba(47,79,79,1)";
+          }
+          context.beginPath();
+          // If not closed, close it
+          for (var j = 0; j < convertedPoints.size()[1] - 1; j++) {
+            context.moveTo(
+              math.subset(convertedPoints, math.index(i, j, 0)),
+              math.subset(convertedPoints, math.index(i, j, 1))
+            );
+            context.lineTo(
+              math.subset(convertedPoints, math.index(i, j + 1, 0)),
+              math.subset(convertedPoints, math.index(i, j + 1, 1))
+            )
+          }
+          context.stroke();
+        }
       }
     }
 
@@ -767,32 +770,35 @@
 
       // Convert path points to polygon side points
       points_map = math.matrix(computePolygonSides(points_map._data, 1))
-      //console.log("Points map:", points_map)
 
       // Scale object points to map coordinates
-      var object_points_map = math.matrix(object_points.projectPointsToMap())
+      if (object_points.items.length > 0) {
+        var object_points_map = math.matrix(object_points.projectPointsToMap())
 
-      // Find nearest objects to each path x-y point
-      nearest_z = math.matrix([])
-      for (var i = 0; i < points_map.size()[0]; i++) {
-        var min_distance = 1e10;
-        path_point = math.subset(points_map, math.index(i, math.range(0, points_map.size()[1])))
-        closest_point_elevation = 0.0
-        for (var j = 0; j < object_points_map.size()[0]; j++) {
-          object_point = math.subset(object_points_map, math.index(j, math.range(0, object_points_map.size()[1])))
-          distance = math.sqrt((path_point._data[0][0] - object_point._data[0][0]) ** 2 + (path_point._data[0][1] - object_point._data[0][1]) ** 2);
+        // Find nearest objects to each path x-y point
+        nearest_z = math.matrix([])
+        for (var i = 0; i < points_map.size()[0]; i++) {
+          var min_distance = 1e10;
+          path_point = math.subset(points_map, math.index(i, math.range(0, points_map.size()[1])))
+          closest_point_elevation = 0.0
+          for (var j = 0; j < object_points_map.size()[0]; j++) {
+            object_point = math.subset(object_points_map, math.index(j, math.range(0, object_points_map.size()[1])))
+            distance = math.sqrt((path_point._data[0][0] - object_point._data[0][0]) ** 2 + (path_point._data[0][1] - object_point._data[0][1]) ** 2);
 
-          if (distance < min_distance) {
-            min_distance = distance
-            closest_point_elevation = object_elevations[j]
+            if (distance < min_distance) {
+              min_distance = distance
+              closest_point_elevation = object_elevations[j]
+            }
           }
+          console.log(nearest_z)
+          console.log(closest_point_elevation)
+          nearest_z = math.concat(nearest_z, [closest_point_elevation], 0)
         }
-        nearest_z = math.concat(nearest_z, [closest_point_elevation], 0)
+        nearest_z = nearest_z.resize([nearest_z.size()[0], 1])
       }
-
-      nearest_z = nearest_z.resize([nearest_z.size()[0], 1])
-      //most_common_nearest_z = most_frequent(nearest_z._data)
-      //nearest_z = math.multiply(math.ones(nearest_z.size()[0], 1), most_common_nearest_z)
+      else {
+        nearest_z = math.zeros(points_map.size()[0], 1)
+      }
       // // Append nearest object points
       points_map = math.concat(points_map, nearest_z, 1)
 
@@ -801,7 +807,6 @@
         new_point = math.subtract(math.subset(points_map, math.index(i, math.range(0, points_map.size()[1]))), egopose_translation)
         points_map.subset(math.index(i, math.range(0, points_map.size()[1])), new_point)
       }
-
       points_map = math.transpose(points_map)
 
       // 3) Rotate by egopose rotation matrix
@@ -850,7 +855,6 @@
       var projectedPoints = projectElevatedPathToFrontalView();
       if (projectedPoints === undefined) return
       var context = canvasFrontal.getContext('2d');
-      //context.lineWidth = 3;
       context.strokeStyle = "rgba(50,205,50,0.75)";
       context.clearRect(0, 0, canvasFrontal.width, canvasFrontal.height);
 
