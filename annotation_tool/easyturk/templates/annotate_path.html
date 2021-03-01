@@ -224,7 +224,7 @@
         <div class='legend-scale'>
           <ul class='legend-labels'>
             <li>
-              <input type="text" id="task_object" value="Selected object" style="font-weight:bold;"
+              <input type="text" id="task_end_point" value="Selected end point" style="font-weight:bold;"
                      readOnly>
             </li>
             <li>
@@ -237,7 +237,8 @@
             </li>
           </ul>
         </div>
-        <button id='store-frame-btn' tabIndex="0" class='btn btn-lg btn-primary' disabled>Store Frame Data
+        <button id='store-frame-btn' tabIndex="0" class='btn btn-lg btn-primary' disabled>Store Frame Data</button>
+          <button id='end-edit-btn' tabIndex="0" class='btn btn-lg btn-primary' disabled>End Edit
         </button>
       </div>
     </div>
@@ -326,6 +327,8 @@
   var frontalViewRatioW;
   var frontalViewRatioH;
   var referredObjectIx;
+  var endPointPathIx;
+
   var selectedFrameToken;
   var selectedFrameIx;
   var frontalRationSet = false;
@@ -410,6 +413,7 @@
 
   function refreshAnnos() {
     referredObjectIx = [];
+    endPointPathIx = null;
     selectedFrameToken = "";
     selectedFrameIx = -1;
   }
@@ -446,7 +450,12 @@
 
   $('#store-frame-btn').click(function () {
     storeFrameData()
+    selectedCommand = null;
+    $("#store-frame-btn").text("Store Frame Data")
+    $("#end-edit-btn").attr("disabled", true);
+
     referredObjectIx = [];
+    endPointPathIx = null;
     selectedFrameToken = "";
     selectedFrameIx = -1;
     document.getElementById("commandBox").value = "";
@@ -1229,18 +1238,23 @@
     ;
     var keycode = (event.keyCode ? event.keyCode : event.which);
     if (keycode = '115') {
-      if (closestObjectIx > -1) {
-        if (referredObjectIx.includes(closestObjectIx)) {
-          referredObjectIx = referredObjectIx.filter(function (value, index, arr) {
-            return value != closestObjectIx;
-          });
-        } else {
-          referredObjectIx.push(closestObjectIx);
+      if (closestPointIx > -1) {
+
+          endPointPathIx = closestPointIx;
           selectedFrameIx = frameIx;
           selectedFrameToken = input["frame_data"]["scene_token"]
-        }
+
+        // if (referredObjectIx.includes(closestObjectIx)) {
+        //   referredObjectIx = referredObjectIx.filter(function (value, index, arr) {
+        //     return value != closestObjectIx;
+        //   });
+        // } else {
+        //   referredObjectIx.push(closestObjectIx);
+        //   selectedFrameIx = frameIx;
+        //   selectedFrameToken = input["frame_data"]["scene_token"]
+        // }
       }
-      if (referredObjectIx.length == 0) {
+      if (endPointPathIx === null) {
         selectedFrameIx = -1;
         selectedFrameToken = "";
       }
@@ -1388,6 +1402,10 @@
     if (closestPoint) {
       drawPoint(closestPoint)
     }
+    if(endPointPathIx !== null){
+      drawPoint(path_points.items[endPointPathIx])
+    }
+
     topDownCtx.stroke();
 
     requestAnimationFrame(update);
@@ -1412,6 +1430,7 @@
     path_points = createPath();
     path_points_elevations = [];
     referredObjectIx = [];
+    endPointPathIx = null;
     selectedFrameToken = "";
     selectedFrameIx = -1;
     object_points = createObjectPoints();
@@ -1438,7 +1457,8 @@
       "delete": false,
       "command": {
         "commandText": document.getElementById("commandBox").value,
-        "referredObjectIx": referredObjectIx,
+        //"referredObjectIx": referredObjectIx,
+        "endPointPathIx": endPointPathIx,
         "selectedFrameToken": selectedFrameToken,
         "selectedFrameIx": Number(selectedFrameIx),
       },
@@ -1456,7 +1476,11 @@
         "actionOtherText": document.getElementById("actionOtherText").value,
       },
     }
-    createdAnnotationsOutputList.push(out);
+    if(selectedCommand !== null){
+      createdAnnotationsOutputList[selectedCommand] = out;
+    }else{
+      createdAnnotationsOutputList.push(out);
+    }
   }
 
   function removeFrameData(index) {
@@ -1508,7 +1532,28 @@
 
   $(document).on('click', '.edit-button', function(e){
      var command_ix = $($(this).parent()[0]).attr('name');
+     $("#end-edit-btn").attr("disabled", false);
+     $("#store-frame-btn").text("Update Command")
     loadBackCommand(command_ix)
+  });
+
+  $(document).on('click', '#end-edit-btn', function(e) {
+    $("#end-edit-btn").attr("disabled", true);
+         $("#store-frame-btn").text("Store Frame Data")
+    selectedCommand = null;
+    refreshAnnos();
+    document.getElementById("commandBox").value = "";
+    document.getElementById("actionLeft").checked = false;
+    document.getElementById("actionRight").checked = false;
+    document.getElementById("actionChangeLaneLeft").checked = false;
+    document.getElementById("actionChangeLaneRight").checked = false;
+    document.getElementById("actionULeft").checked = false;
+    document.getElementById("actionURight").checked = false;
+    document.getElementById("actionPark").checked = false;
+    document.getElementById("actionStop").checked = false;
+    document.getElementById("actionFollow").checked = false;
+    document.getElementById("actionOther").checked = false;
+    document.getElementById("actionOtherText").value = "";
   });
 
     $(document).on('click', '.trash-button', function(e){
@@ -1517,10 +1562,12 @@
      updateCommandTable()
   });
 
-
+  selectedCommand = null;
   function loadBackCommand(commandIndex) {
+    selectedCommand = commandIndex;
     document.getElementById("commandBox").value = createdAnnotationsOutputList[Number(commandIndex)]["command"]["commandText"];
-    referredObjectIx = createdAnnotationsOutputList[Number(commandIndex)]["command"]["referredObjectIx"];
+    //referredObjectIx = createdAnnotationsOutputList[Number(commandIndex)]["command"]["referredObjectIx"];
+    endPointPathIx = createdAnnotationsOutputList[Number(commandIndex)]["command"]["endPointPathIx"];
     selectedFrameToken = createdAnnotationsOutputList[Number(commandIndex)]["command"]["selectedFrameToken"];
     selectedFrameIx = createdAnnotationsOutputList[Number(commandIndex)]["command"]["selectedFrameIx"];
 
@@ -1564,7 +1611,10 @@
     if (document.getElementById("commandBox").value) {
       written_command = true
     }
-    if (referredObjectIx.length) {
+    // if (referredObjectIx.length) {
+    //   selected_object = true
+    // }
+    if(endPointPathIx !== null){
       selected_object = true
     }
     if (selectedFrameToken) {
@@ -1603,9 +1653,9 @@
 
 
     if (selected_object) {
-      document.getElementById("task_object").style.backgroundColor = "#5ae406"
+      document.getElementById("task_end_point").style.backgroundColor = "#5ae406"
     } else {
-      document.getElementById("task_object").style.backgroundColor = "#f93005"
+      document.getElementById("task_end_point").style.backgroundColor = "#f93005"
     }
     if (written_command) {
       document.getElementById("task_command").style.backgroundColor = "#5ae406"
@@ -1629,9 +1679,13 @@
     if (document.getElementById("commandBox").value) {
       written_command = true
     }
-    if (referredObjectIx.length) {
+    // if (referredObjectIx.length) {
+    //   selected_object = true
+    // }
+    if(endPointPathIx !== null){
       selected_object = true
     }
+
     if (document.getElementById("actionLeft").checked) {
       any_checked_actions = true
     }
@@ -1688,7 +1742,10 @@
         if (createdAnnotationsOutputCommand["commandText"]) {
           written_command = true
         }
-        if (createdAnnotationsOutputCommand["referredObjectIx"].length) {
+        // if (createdAnnotationsOutputCommand["referredObjectIx"].length) {
+        //   selected_object = true
+        // }
+        if(createdAnnotationsOutputCommand["endPointPathIx"] !== null){
           selected_object = true
         }
 
