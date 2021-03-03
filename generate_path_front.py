@@ -1,6 +1,8 @@
 import argparse
 import json
 import os
+import cv2
+from PIL import Image, ImageDraw
 
 import numpy as np
 from lyft_dataset_sdk.utils.data_classes import (
@@ -17,6 +19,9 @@ from tqdm import tqdm
 from anno_tool_api import LyftDatasetAnno
 from shapely.geometry import LineString
 from typing import List, Tuple, Union
+
+
+flatten = lambda t: [item for sublist in t for item in sublist]
 
 
 def return_side_points(
@@ -247,9 +252,39 @@ if __name__ == "__main__":
             #         thickness=3,
             #     )
             #     start_egocenter = egocenter
-
             # os.makedirs(os.path.join(save_dir, "jaja"), exist_ok=True)
             # cv2.imwrite(os.path.join(save_dir, "jaja", f"path_{i}.jpg"), image)
+
+            # image_objects_bbox = [item for item in image_objects_bbox if item != None]
+            # image_objects_bbox = np.array(image_objects_bbox)
+            # image = Image.open(os.path.join(save_dir, "jaja", f"path_{i}.jpg"))
+            # image_draw = ImageDraw.Draw(image)
+            # for image_object_bbox in image_objects_bbox:
+            #     image_draw.polygon(
+            #         flatten(
+            #             np.concatenate(
+            #                 (image_object_bbox[:4, :], image_object_bbox[0, :][None, :])
+            #             ).tolist()
+            #         ),
+            #         outline="#00ff00",
+            #     )
+            #     image_draw.polygon(
+            #         flatten(
+            #             np.concatenate(
+            #                 (image_object_bbox[4:, :], image_object_bbox[4, :][None, :])
+            #             ).tolist()
+            #         ),
+            #         outline="#00ff00",
+            #     )
+            #     for j in range(4):
+            #         image_draw.line(
+            #             np.concatenate(
+            #                 (image_object_bbox[j], image_object_bbox[j + 4])
+            #             ).tolist(),
+            #             fill="#00ff00",
+            #             width=1,
+            #         )
+            # image.save(os.path.join(save_dir, "jaja", f"path_{i}.jpg"))
 
             out_dict = json.load(
                 open(os.path.join(save_dir, scene_token, f"frame_{i}_data.json"), "r")
