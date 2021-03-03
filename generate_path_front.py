@@ -194,7 +194,7 @@ if __name__ == "__main__":
                     subsequent_egocenters.append(subsequent_egocenter)
 
             # Project subsequent egocenters to scenes
-            if len(subsequent_egocenters):
+            if len(subsequent_egocenters) > 1:
                 # Draw path width
 
                 subsequent_egocenters = np.array(subsequent_egocenters)
