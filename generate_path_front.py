@@ -240,22 +240,22 @@ if __name__ == "__main__":
             else:
                 subsequent_egocenters_frontal = []
 
-            if len(subsequent_egocenters):
-                image = cv2.imread(
-                    os.path.join(save_dir, scene_token, f"{sample_token}.jpg")
-                )
-                start_egocenter = subsequent_egocenters_frontal[0]
-                for egocenter in subsequent_egocenters_frontal[1:]:
-                    image = cv2.line(
-                        image,
-                        tuple(start_egocenter),
-                        tuple(egocenter),
-                        color=(0, 255, 0),
-                        thickness=3,
-                    )
-                    start_egocenter = egocenter
-                os.makedirs(os.path.join(save_dir, "jaja"), exist_ok=True)
-                cv2.imwrite(os.path.join(save_dir, "jaja", f"path_{i}.jpg"), image)
+            # if len(subsequent_egocenters):
+            #     image = cv2.imread(
+            #         os.path.join(save_dir, scene_token, f"{sample_token}.jpg")
+            #     )
+            #     start_egocenter = subsequent_egocenters_frontal[0]
+            #     for egocenter in subsequent_egocenters_frontal[1:]:
+            #         image = cv2.line(
+            #             image,
+            #             tuple(start_egocenter),
+            #             tuple(egocenter),
+            #             color=(0, 255, 0),
+            #             thickness=3,
+            #         )
+            #         start_egocenter = egocenter
+            #     os.makedirs(os.path.join(save_dir, "jaja"), exist_ok=True)
+            #     cv2.imwrite(os.path.join(save_dir, "jaja", f"path_{i}.jpg"), image)
 
             # image_objects_bbox = [item for item in image_objects_bbox if item != None]
             # image_objects_bbox = np.array(image_objects_bbox)
@@ -288,12 +288,12 @@ if __name__ == "__main__":
             #         )
             # image.save(os.path.join(save_dir, "jaja", f"path_{i}.jpg"))
 
-            # out_dict = json.load(
-            #     open(os.path.join(save_dir, scene_token, f"frame_{i}_data.json"), "r")
-            # )
-            # out_dict["path_points_frontal"] = subsequent_egocenters_frontal
+            out_dict = json.load(
+                open(os.path.join(save_dir, scene_token, f"frame_{i}_data.json"), "r")
+            )
+            out_dict["path_points_frontal"] = subsequent_egocenters_frontal
 
-            # with open(
-            #     os.path.join(save_dir, scene_token, f"frame_{i}_data.json"), "w"
-            # ) as f:
-            #     json.dump(out_dict, f)
+            with open(
+                os.path.join(save_dir, scene_token, f"frame_{i}_data.json"), "w"
+            ) as f:
+                json.dump(out_dict, f)
