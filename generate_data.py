@@ -131,8 +131,8 @@ if __name__ == "__main__":
                     ).inverse
                 )
                 subsequent_egocenter = subsequent_egobox.center[:2].tolist()
-                subsequent_egocenter_elevation = subsequent_egobox.append(
-                    subsequent_egocenter.bottom_corners().mean(axis=1)[2]
+                subsequent_egocenter_elevation = (
+                    subsequent_egobox.bottom_corners().mean(axis=1)[2]
                 )
                 subsequent_egobox = (
                     subsequent_egobox.bottom_corners()[:2, :].transpose().tolist()

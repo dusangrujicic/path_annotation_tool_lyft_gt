@@ -126,7 +126,7 @@ if __name__ == "__main__":
             for subsequent_sample_token in subsequent_sample_tokens:
                 subsequent_sample_rec = lyft.get("sample", subsequent_sample_token)
                 subsequent_sample_data = lyft.get(
-                    "sample_data", subsequent_sample_rec["data"]["LIDAR_TOP"]
+                    "sample_data", subsequent_sample_rec["data"]["CAM_FRONT"]
                 )
                 subsequent_egopose = lyft.get(
                     "ego_pose", subsequent_sample_data["ego_pose_token"]
@@ -137,19 +137,19 @@ if __name__ == "__main__":
             sample_data_camera = lyft.get(
                 "sample_data", sample_rec["data"]["CAM_FRONT"]
             )
-            sample_data_lidar = lyft.get("sample_data", sample_rec["data"]["LIDAR_TOP"])
+            sample_data_lidar = lyft.get("sample_data", sample_rec["data"]["CAM_FRONT"])
             current_egopose = lyft.get("ego_pose", sample_data_lidar["ego_pose_token"])
 
-            # (
-            #     image_objects_bbox,
-            #     camera_intrinsic,
-            #     camera_translation,
-            #     camera_rotation,
-            # ) = lyft.explorer.render_sample_camera_data_custom(
-            #     sample_data_token=sample_data_camera["token"],
-            #     out_path=os.path.join(save_dir, scene_token, f"{sample_token}.jpg"),
-            #     with_annotations=False,
-            # )
+            (
+                image_objects_bbox,
+                camera_intrinsic,
+                camera_translation,
+                camera_rotation,
+            ) = lyft.explorer.render_sample_camera_data_custom(
+                sample_data_token=sample_data_camera["token"],
+                out_path=os.path.join(save_dir, scene_token, f"{sample_token}.jpg"),
+                with_annotations=False,
+            )
 
             ################################
             sd_record = lyft.get("sample_data", sample_data_camera["token"])
@@ -240,60 +240,60 @@ if __name__ == "__main__":
             else:
                 subsequent_egocenters_frontal = []
 
-            # if len(subsequent_egocenters):
-            #     image = cv2.imread(
-            #         os.path.join(save_dir, scene_token, f"{sample_token}.jpg")
-            #     )
-            #     start_egocenter = subsequent_egocenters_frontal[0]
-            #     for egocenter in subsequent_egocenters_frontal[1:]:
-            #         image = cv2.line(
-            #             image,
-            #             tuple(start_egocenter),
-            #             tuple(egocenter),
-            #             color=(0, 255, 0),
-            #             thickness=3,
-            #         )
-            #         start_egocenter = egocenter
-            #     os.makedirs(os.path.join(save_dir, "jaja"), exist_ok=True)
-            #     cv2.imwrite(os.path.join(save_dir, "jaja", f"path_{i}.jpg"), image)
+            if len(subsequent_egocenters):
+                image = cv2.imread(
+                    os.path.join(save_dir, scene_token, f"{sample_token}.jpg")
+                )
+                start_egocenter = subsequent_egocenters_frontal[0]
+                for egocenter in subsequent_egocenters_frontal[1:]:
+                    image = cv2.line(
+                        image,
+                        tuple(start_egocenter),
+                        tuple(egocenter),
+                        color=(0, 255, 0),
+                        thickness=3,
+                    )
+                    start_egocenter = egocenter
+                os.makedirs(os.path.join(save_dir, "jaja"), exist_ok=True)
+                cv2.imwrite(os.path.join(save_dir, "jaja", f"path_{i}.jpg"), image)
 
-            # image_objects_bbox = [item for item in image_objects_bbox if item != None]
-            # image_objects_bbox = np.array(image_objects_bbox)
-            # image = Image.open(os.path.join(save_dir, "jaja", f"path_{i}.jpg"))
-            # image_draw = ImageDraw.Draw(image)
-            # for image_object_bbox in image_objects_bbox:
-            #     image_draw.polygon(
-            #         flatten(
-            #             np.concatenate(
-            #                 (image_object_bbox[:4, :], image_object_bbox[0, :][None, :])
-            #             ).tolist()
-            #         ),
-            #         outline="#00ff00",
-            #     )
-            #     image_draw.polygon(
-            #         flatten(
-            #             np.concatenate(
-            #                 (image_object_bbox[4:, :], image_object_bbox[4, :][None, :])
-            #             ).tolist()
-            #         ),
-            #         outline="#00ff00",
-            #     )
-            #     for j in range(4):
-            #         image_draw.line(
-            #             np.concatenate(
-            #                 (image_object_bbox[j], image_object_bbox[j + 4])
-            #             ).tolist(),
-            #             fill="#00ff00",
-            #             width=1,
-            #         )
-            # image.save(os.path.join(save_dir, "jaja", f"path_{i}.jpg"))
+            image_objects_bbox = [item for item in image_objects_bbox if item != None]
+            image_objects_bbox = np.array(image_objects_bbox)
+            image = Image.open(os.path.join(save_dir, "jaja", f"path_{i}.jpg"))
+            image_draw = ImageDraw.Draw(image)
+            for image_object_bbox in image_objects_bbox:
+                image_draw.polygon(
+                    flatten(
+                        np.concatenate(
+                            (image_object_bbox[:4, :], image_object_bbox[0, :][None, :])
+                        ).tolist()
+                    ),
+                    outline="#00ff00",
+                )
+                image_draw.polygon(
+                    flatten(
+                        np.concatenate(
+                            (image_object_bbox[4:, :], image_object_bbox[4, :][None, :])
+                        ).tolist()
+                    ),
+                    outline="#00ff00",
+                )
+                for j in range(4):
+                    image_draw.line(
+                        np.concatenate(
+                            (image_object_bbox[j], image_object_bbox[j + 4])
+                        ).tolist(),
+                        fill="#00ff00",
+                        width=1,
+                    )
+            image.save(os.path.join(save_dir, "jaja", f"path_{i}.jpg"))
 
-            out_dict = json.load(
-                open(os.path.join(save_dir, scene_token, f"frame_{i}_data.json"), "r")
-            )
-            out_dict["path_points_frontal"] = subsequent_egocenters_frontal
+            # out_dict = json.load(
+            #     open(os.path.join(save_dir, scene_token, f"frame_{i}_data.json"), "r")
+            # )
+            # out_dict["path_points_frontal"] = subsequent_egocenters_frontal
 
-            with open(
-                os.path.join(save_dir, scene_token, f"frame_{i}_data.json"), "w"
-            ) as f:
-                json.dump(out_dict, f)
+            # with open(
+            #     os.path.join(save_dir, scene_token, f"frame_{i}_data.json"), "w"
+            # ) as f:
+            #     json.dump(out_dict, f)
