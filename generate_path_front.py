@@ -140,16 +140,16 @@ if __name__ == "__main__":
             sample_data_lidar = lyft.get("sample_data", sample_rec["data"]["LIDAR_TOP"])
             current_egopose = lyft.get("ego_pose", sample_data_lidar["ego_pose_token"])
 
-            (
-                image_objects_bbox,
-                camera_intrinsic,
-                camera_translation,
-                camera_rotation,
-            ) = lyft.explorer.render_sample_camera_data_custom(
-                sample_data_token=sample_data_camera["token"],
-                out_path=os.path.join(save_dir, scene_token, f"{sample_token}.jpg"),
-                with_annotations=False,
-            )
+            # (
+            #     image_objects_bbox,
+            #     camera_intrinsic,
+            #     camera_translation,
+            #     camera_rotation,
+            # ) = lyft.explorer.render_sample_camera_data_custom(
+            #     sample_data_token=sample_data_camera["token"],
+            #     out_path=os.path.join(save_dir, scene_token, f"{sample_token}.jpg"),
+            #     with_annotations=False,
+            # )
 
             ################################
             sd_record = lyft.get("sample_data", sample_data_camera["token"])
