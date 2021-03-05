@@ -892,18 +892,14 @@
 
     // 1) Create polygons in 2D and append z-axis
     // Scale path points to map coordinates
-    console.log("points")
     var points_map = math.matrix(path_points.projectPointsToMap(true));
-    console.log("end points")
 
     // Convert path points to polygon side points
     points_map = math.matrix(computePolygonSides(points_map._data, 1))
 
     // Scale object points to map coordinates
     if (object_points.items.length > 0) {
-      console.log("objects")
       var object_points_map = math.matrix(object_points.projectPointsToMap(false))
-    console.log("end objects")
 
       // Find nearest objects to each path x-y point
       nearest_z = math.matrix([])
@@ -1021,7 +1017,6 @@
         points_map.push([point.x, point.y]);
       }
     });
-    console.log(points_map)
 
     var points_map = math.matrix(points_map)
     var canvasTopDown_size = math.matrix([canvasTopDown.width, canvasTopDown.height]) // Width, Height
@@ -1602,6 +1597,7 @@
     $("#end-edit-btn").attr("disabled", false);
     $("#store-frame-btn").text("Update Command")
     loadBackCommand(command_ix)
+    drawPathOnFrontalView()
   });
 
   $(document).on('click', '#end-edit-btn', function (e) {
